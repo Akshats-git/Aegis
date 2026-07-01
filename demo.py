@@ -1,44 +1,48 @@
-"""Phase 1 smoke demo: prove the clinical model + memory engine work (offline, no keys).
+"""Phase 2 demo: ingest a patient's fragmented records and expose the danger (offline).
 
     python demo.py
 
-The full lethal-interaction story arrives in later phases. This just shows a few clinical
-facts going in, and Aegis surfacing only what is currently TRUE (stale facts excluded).
+Loads the synthetic patient (4 source documents) into the health memory and shows the
+fragmented, conflicting picture a new doctor would face. Reconciliation (forgetting the
+stale facts) and the safety net arrive in the next phases.
 """
 
 from __future__ import annotations
 
-from aegis import get_memory, Medication, Condition, ClinicalStatus
+from collections import defaultdict
+
+from aegis import get_memory, Medication
+from aegis.ingest import ingest_records, list_record_files
+from aegis.sample_patient import PROPOSED_DRUG
 
 
 def main() -> None:
     mem = get_memory()
 
-    mem.remember(Medication(
-        id="med-phenelzine", name="phenelzine", drug_class="MAOI", dose="15mg",
-        status=ClinicalStatus.DISCONTINUED, started="2021-03-01", stopped="2023-06-01",
-        reason="depression; stopped due to side effects", source="Psychiatry note 2023-06-01",
-    ))
-    mem.remember(Medication(
-        id="med-metoprolol", name="metoprolol", drug_class="beta-blocker", dose="50mg",
-        status=ClinicalStatus.ACTIVE, started="2023-04-11",
-        reason="hypertension", source="Cardiology consult 2023-04-11",
-    ))
-    mem.remember(Condition(
-        id="cond-htn", name="hypertension", status=ClinicalStatus.ACTIVE,
-        onset="2023-04-11", source="Cardiology consult 2023-04-11",
-    ))
+    print("Source documents on file (fragmented across clinics):")
+    for f in list_record_files():
+        print(f"  - {f}")
 
-    print("All facts on record:")
-    for n in mem.all_nodes():
-        print(f"  - {type(n).__name__}: {getattr(n, 'name', '?')} [{n.status.value}]")
+    n = ingest_records(mem)
+    print(f"\nremember(): ingested {n} clinical facts into the graph.\n")
 
-    print("\nWhat Aegis treats as CURRENTLY TRUE (stale facts excluded):")
-    for n in mem.active():
-        print(f"  - {type(n).__name__}: {getattr(n, 'name', '?')}")
+    print("Medications on record, grouped by drug (note the conflict):")
+    by_name: dict[str, list[Medication]] = defaultdict(list)
+    for node in mem.all_nodes():
+        if isinstance(node, Medication):
+            by_name[node.name].append(node)
+    for name, meds in by_name.items():
+        statuses = ", ".join(f"{m.status.value} (per {m.source})" for m in meds)
+        flag = "  <-- CONFLICT" if len({m.status for m in meds}) > 1 else ""
+        print(f"  - {name}: {statuses}{flag}")
 
-    print("\nNote: the discontinued MAOI is on record but NOT current — "
-          "in later phases, forgetting it is what prevents a fatal interaction.")
+    print("\n⚠️  The danger:")
+    print(f"  Today a doctor wants to prescribe {PROPOSED_DRUG['name']} "
+          f"({PROPOSED_DRUG['drug_class']}) for a migraine.")
+    print("  An active MAOI (phenelzine) is buried in the psychiatry note, and the record")
+    print("  still shows a discontinued SSRI as 'active'. Getting this picture right is")
+    print("  literally life-or-death — that's what Phase 3 (reconcile/forget) and Phase 4")
+    print("  (interaction safety net) do next.")
 
 
 if __name__ == "__main__":

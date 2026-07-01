@@ -59,6 +59,10 @@ class MockMemory:
         for n in nodes:
             self.remember(n)
 
+    def remember_text(self, text: str, source: str) -> None:
+        # mock backend keeps only structured facts; raw text is a no-op here
+        pass
+
     def recall(self, query: str) -> list[ClinicalNode]:
         # naive keyword recall over ACTIVE facts (real reasoning lives in CogneeMemory)
         q = query.lower()
@@ -94,6 +98,9 @@ class CogneeMemory:
 
     def remember(self, node: ClinicalNode) -> None:
         self._run(self._cognee.remember(describe(node), dataset_name=self._ds(node.id)))
+
+    def remember_text(self, text: str, source: str) -> None:
+        self._run(self._cognee.remember(text, dataset_name=self._ds(f"note_{source}")))
 
     def recall(self, query: str):
         return self._run(
