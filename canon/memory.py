@@ -16,8 +16,10 @@ from .schema import Decision, Symbol, Status
 
 
 class CanonMemory(Protocol):
+    # recall returns structured nodes on the mock backend and Cognee response
+    # entries on the real backend, so it is intentionally untyped here.
     def remember(self, node: Decision | Symbol) -> None: ...
-    def recall(self, topic: str) -> list[Decision | Symbol]: ...
+    def recall(self, topic: str): ...
     def improve(self, node_id: str, success: bool) -> None: ...
     def forget(self, node_id: str) -> list[str]: ...
     def all_nodes(self) -> list[Decision | Symbol]: ...
@@ -67,30 +69,66 @@ class MockMemory:
 
 
 class CogneeMemory:
-    """Real backend. Each method documents the exact Cognee call it maps to."""
+    """Real backend, wired against the verified cognee 1.2 async API.
+
+    Design: each forgettable node lives in its own dataset ``canon_<id>`` so
+    ``forget(dataset=...)`` targets exactly one node, while ``recall`` still reasons
+    across the whole graph via GRAPH_COMPLETION. The v1 verbs (remember/recall/
+    improve/forget) are used directly — that's the hackathon theme.
+
+    STATUS: wired but pending one live validation run (blocked on a valid LLM key).
+    Verified so far: signatures match, embeddings run locally, pipeline reaches the LLM.
+    """
 
     def __init__(self) -> None:
-        import cognee  # noqa: F401  (imported lazily so mock mode needs no install)
+        import asyncio
+        import cognee
+        from cognee.modules.search.types import SearchType
+
         self._cognee = cognee
+        self._SearchType = SearchType
+        self._run = asyncio.run
+        self._ds = lambda node_id: f"canon_{node_id}".replace(" ", "_")
+
+    def _describe(self, node: Decision | Symbol) -> str:
+        """Render a node as text so cognify extracts its entities and relations."""
+        if isinstance(node, Decision):
+            base = f"Decision {node.id} (topic: {node.topic}): {node.statement}. Source {node.source}. Status: {node.status.value}."
+            if node.superseded_by:
+                base += f" This supersedes / is superseded in favor of {node.superseded_by}."
+            return base
+        base = f"API symbol {node.library}.{node.name} (id {node.id}), introduced {node.version_introduced}, status {node.status.value}."
+        if node.version_removed:
+            base += f" Removed in {node.version_removed}."
+        if node.replacement:
+            base += f" Replaced by {node.replacement}."
+        return base
 
     def remember(self, node: Decision | Symbol) -> None:
-        # await cognee.add(node.model_dump()); await cognee.cognify()
-        raise NotImplementedError("wire cognee.add + cognify")
+        # v1 verb: add + cognify + optional self-improvement in one call
+        self._run(self._cognee.remember(self._describe(node), dataset_name=self._ds(node.id)))
 
-    def recall(self, topic: str) -> list[Decision | Symbol]:
-        # await cognee.search(query_text=topic, query_type=SearchType.GRAPH_COMPLETION)
-        raise NotImplementedError("wire cognee.search (hybrid graph+vector)")
+    def recall(self, topic: str):
+        # hybrid graph+vector reasoning over the whole graph
+        return self._run(
+            self._cognee.recall(
+                query_text=f"What is the current canonical answer for: {topic}? Ignore superseded or removed items.",
+                query_type=self._SearchType.GRAPH_COMPLETION,
+                include_references=True,
+            )
+        )
 
     def improve(self, node_id: str, success: bool) -> None:
-        # cognee feedback loop: re-weight edges / update node props for node_id
-        raise NotImplementedError("wire cognee improve()/memify feedback")
+        # enrich/re-weight the node's dataset (feedback influence flows through recall too)
+        self._run(self._cognee.improve(dataset=self._ds(node_id)))
 
     def forget(self, node_id: str) -> list[str]:
-        # await cognee.delete(data_id=node_id)  # validate cascade on derived edges
-        raise NotImplementedError("wire cognee.forget/delete")
+        # remove exactly this node's dataset. Day-1 TODO: confirm derived edges cascade.
+        self._run(self._cognee.forget(dataset=self._ds(node_id)))
+        return [node_id]
 
-    def all_nodes(self) -> list[Decision | Symbol]:
-        raise NotImplementedError("wire graph dump for the visualizer")
+    def all_nodes(self):  # graph dump for the visualizer — best-effort, wire when needed
+        raise NotImplementedError("expose graph via cognee graph API for the visualizer")
 
 
 def get_memory() -> CanonMemory:

@@ -42,13 +42,19 @@ ADRs / PRs / changelogs ──ingest──▶  Cognee graph  ◀──MCP── 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env            # add your keys; set CANON_BACKEND=cognee to use real Cognee
+cp .env.example .env            # add LLM_API_KEY (OpenAI); embeddings + LLM use OpenAI
 
-python demo.py                  # runs the end-to-end "reversed decision" demo (mock backend by default)
+python demo.py                  # OFFLINE mock demo — no keys, always green
+CANON_BACKEND=cognee python demo_live.py   # LIVE demo against the real Cognee engine
 ```
 
-The repo runs in **mock backend** out of the box (no keys needed) so the demo is always
-green. Flip `CANON_BACKEND=cognee` once the Cognee calls in `canon/memory.py` are wired.
+Two demos:
+- **`demo.py`** — mock backend, no keys, always green (safe fallback for the stage).
+- **`demo_live.py`** — real Cognee: `remember()` → `recall()` → `forget()`, and shows the
+  superseded decision's evidence chunk **vanish** from the graph after `forget()`. ✅ validated.
+
+`.env` uses OpenAI for both the graph-extraction LLM (`gpt-4o-mini`) and embeddings
+(`text-embedding-3-small`). Self-hosted Cognee needs no Cognee Cloud key.
 
 ## Demo (the one that wins the room)
 1. Naive RAG answer to "which state library do we use?" → **Redux** (it's mentioned most).

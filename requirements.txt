@@ -1,5 +1,5 @@
-# Core memory layer
-cognee>=1.0
+# Core memory layer (pulls in openai, litellm, lancedb, etc.)
+cognee>=1.2
 
 # MCP server (exposes Canon to coding agents)
 mcp>=1.0
@@ -7,3 +7,7 @@ mcp>=1.0
 # Utilities
 python-dotenv>=1.0
 pydantic>=2.0
+
+# LLM adapter used by cognee for the anthropic provider (optional; only if you
+# switch LLM_PROVIDER=anthropic). Not needed for the default OpenAI setup.
+# anthropic>=0.60
