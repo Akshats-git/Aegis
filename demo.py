@@ -1,48 +1,49 @@
-"""Phase 2 demo: ingest a patient's fragmented records and expose the danger (offline).
+"""Phase 3 demo: reconcile the fragmented records and forget the stale facts (offline).
 
     python demo.py
 
-Loads the synthetic patient (4 source documents) into the health memory and shows the
-fragmented, conflicting picture a new doctor would face. Reconciliation (forgetting the
-stale facts) and the safety net arrive in the next phases.
+Shows the current-medication picture BEFORE reconciliation (polluted with a stale
+'active' sertraline) and AFTER (Aegis has forgotten it). A clean current picture is the
+foundation the Phase 4 safety net depends on.
 """
 
 from __future__ import annotations
 
-from collections import defaultdict
+from aegis import get_memory, Medication, ClinicalStatus
+from aegis.ingest import ingest_records
+from aegis.reconcile import reconcile, current_medications
+from aegis.sample_patient import records, PROPOSED_DRUG
 
-from aegis import get_memory, Medication
-from aegis.ingest import ingest_records, list_record_files
-from aegis.sample_patient import PROPOSED_DRUG
+
+def _print_meds(nodes) -> None:
+    meds = [n for n in nodes if isinstance(n, Medication) and n.status == ClinicalStatus.ACTIVE]
+    for m in meds:
+        print(f"    - {m.name} [{m.drug_class}]  (per {m.source})")
 
 
 def main() -> None:
     mem = get_memory()
+    nodes = records()
+    ingest_records(mem)
 
-    print("Source documents on file (fragmented across clinics):")
-    for f in list_record_files():
-        print(f"  - {f}")
+    print("Current medications BEFORE reconciliation (what a naive record shows):")
+    _print_meds(nodes)
 
-    n = ingest_records(mem)
-    print(f"\nremember(): ingested {n} clinical facts into the graph.\n")
+    actions, clean = reconcile(nodes, mem)
 
-    print("Medications on record, grouped by drug (note the conflict):")
-    by_name: dict[str, list[Medication]] = defaultdict(list)
-    for node in mem.all_nodes():
-        if isinstance(node, Medication):
-            by_name[node.name].append(node)
-    for name, meds in by_name.items():
-        statuses = ", ".join(f"{m.status.value} (per {m.source})" for m in meds)
-        flag = "  <-- CONFLICT" if len({m.status for m in meds}) > 1 else ""
-        print(f"  - {name}: {statuses}{flag}")
+    print("\nforget(): Aegis reconciled conflicting records —")
+    for a in actions:
+        for fid, fstatus, fsrc in a.forgotten:
+            print(f"    ✗ forgot '{a.entity}' [{fstatus}] from {fsrc}")
+            print(f"      kept the newer fact: [{a.kept_status}] from {a.kept_source}")
 
-    print("\n⚠️  The danger:")
-    print(f"  Today a doctor wants to prescribe {PROPOSED_DRUG['name']} "
-          f"({PROPOSED_DRUG['drug_class']}) for a migraine.")
-    print("  An active MAOI (phenelzine) is buried in the psychiatry note, and the record")
-    print("  still shows a discontinued SSRI as 'active'. Getting this picture right is")
-    print("  literally life-or-death — that's what Phase 3 (reconcile/forget) and Phase 4")
-    print("  (interaction safety net) do next.")
+    print("\nCurrent medications AFTER reconciliation (clean, trustworthy):")
+    _print_meds(clean)
+
+    print("\nWhy it matters:")
+    print(f"  The safety net (Phase 4) will check {PROPOSED_DRUG['name']} against THIS clean")
+    print("  list. If the stale SSRI had lingered, the interaction picture would be wrong.")
+    print("  The active MAOI (phenelzine) correctly remains — and it's the hidden danger.")
 
 
 if __name__ == "__main__":
