@@ -27,17 +27,27 @@ and it's exactly what Cognee's graph memory is built to do.
 | `forget()`   | Discontinued meds / resolved / corrected facts are retired so they can never mislead. **The safety hero.** |
 
 ## Status
-- **Phase 1 (done):** clinical data model + memory engine (mock + validated Cognee backend).
-- Phase 2: synthetic patient + ingestion · Phase 3: reconciliation & forget engine ·
-  Phase 4: drug-interaction safety net · Phase 5: recall & the "new doctor" experience ·
-  Phase 6: demo & polish.
+- **Phases 1–5 (done):** clinical model + memory engine, synthetic patient + ingestion,
+  reconciliation & forget engine, drug-interaction safety net, and the live "new doctor"
+  recall experience — **validated end-to-end against the real Cognee engine** (all four
+  verbs: remember · recall · improve · forget).
+- Phase 6 (next): demo polish, visualization, blog, video.
+
+## Architecture (how Cognee is used)
+- **Cognee = the memory substrate.** One connected dataset per patient → high-quality
+  `recall()` with cited evidence; `remember()` ingest; `improve()` enrichment; `forget()`
+  for true **right-to-be-forgotten** erasure of the whole record.
+- **Aegis reconciliation engine = the safety brain.** Deterministically decides the
+  authoritative current picture and forgets stale facts — guaranteed, not left to an LLM —
+  so the interaction safety check runs on a clean, trustworthy medication list.
 
 ## Quickstart
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python demo.py                 # offline smoke demo, no keys needed
+python demo.py                             # offline demo, no keys needed
+AEGIS_BACKEND=cognee python demo_live.py   # live, against real Cognee (needs .env key)
 ```
 
 The real backend uses open-source, self-hosted Cognee with OpenAI for extraction +

@@ -86,6 +86,8 @@ class MockMemory:
 class CogneeMemory:
     """Real backend, wired against the cognee 1.2 async API (validated in prior work)."""
 
+    DATASET = "aegis_patient"
+
     def __init__(self) -> None:
         import asyncio
         import cognee
@@ -94,29 +96,56 @@ class CogneeMemory:
         self._cognee = cognee
         self._SearchType = SearchType
         self._run = asyncio.run
-        self._ds = lambda node_id: f"aegis_{node_id}".replace(" ", "_")
+        # All facts live in ONE connected dataset (so recall reasons over the whole graph),
+        # while we capture each fact's data_id so forget() can retire exactly one fact.
+        self._data_ids: dict[str, str] = {}  # node.id -> cognee data_id
 
     def remember(self, node: ClinicalNode) -> None:
-        self._run(self._cognee.remember(describe(node), dataset_name=self._ds(node.id)))
+        r = self._run(self._cognee.remember(
+            describe(node), dataset_name=self.DATASET, self_improvement=False))
+        items = (r.to_dict() or {}).get("items") or []
+        if items and items[0].get("id"):
+            self._data_ids[node.id] = str(items[0]["id"])
 
     def remember_text(self, text: str, source: str) -> None:
-        self._run(self._cognee.remember(text, dataset_name=self._ds(f"note_{source}")))
+        self._run(self._cognee.remember(
+            text, dataset_name=self.DATASET, self_improvement=False))
 
     def recall(self, query: str):
-        return self._run(
-            self._cognee.recall(
-                query_text=query,
-                query_type=self._SearchType.GRAPH_COMPLETION,
-                include_references=True,
+        try:
+            return self._run(
+                self._cognee.recall(
+                    query_text=query,
+                    query_type=self._SearchType.GRAPH_COMPLETION,
+                    datasets=[self.DATASET],
+                    include_references=True,
+                )
             )
-        )
+        except Exception as e:
+            # After erase() the dataset is gone → recall 404s. That's the erasure proof.
+            if "DatasetNotFound" in type(e).__name__ or "No datasets" in str(e):
+                return []
+            raise
 
-    def improve(self, node_id: str) -> None:
-        self._run(self._cognee.improve(dataset=self._ds(node_id)))
+    def improve(self, node_id: str | None = None) -> None:
+        self._run(self._cognee.improve(dataset=self.DATASET))
 
     def forget(self, node_id: str) -> list[str]:
-        self._run(self._cognee.forget(dataset=self._ds(node_id)))
-        return [node_id]
+        # Removes the data record for one fact. NOTE: in this cognee version, single-item
+        # deletion does not purge graph/vector, so it does not change recall. The
+        # authoritative "current picture" is guaranteed by the reconciliation engine, not
+        # by this call. For true erasure that purges the store, use erase().
+        from uuid import UUID
+        data_id = self._data_ids.pop(node_id, None)
+        if data_id:
+            self._run(self._cognee.forget(data_id=UUID(data_id), dataset=self.DATASET))
+            return [node_id]
+        return []
+
+    def erase(self) -> None:
+        """Right to be forgotten: purge the entire patient record (graph + vector)."""
+        self._run(self._cognee.forget(dataset=self.DATASET))
+        self._data_ids.clear()
 
     def all_nodes(self):  # graph dump — wired in a later phase for the visualizer
         raise NotImplementedError
