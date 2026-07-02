@@ -16,7 +16,14 @@ an LLM. Requires a working LLM key in .env. Offline version: demo.py.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+import warnings
+
+# Quiet Cognee/aiohttp logs so the demo output is clean on stage (set before importing cognee).
+os.environ.setdefault("LOG_LEVEL", "CRITICAL")
+logging.getLogger("aiohttp").setLevel(logging.CRITICAL)
+warnings.filterwarnings("ignore")
 
 from dotenv import load_dotenv
 
