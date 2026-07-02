@@ -51,6 +51,14 @@ AEGIS_BACKEND=cognee python demo_live.py   # live, against real Cognee (needs .e
 python -m aegis.visualize                  # the patient safety view (timeline + alert card)
 ```
 
+### Web app
+```bash
+# 1) API backend (instant deterministic engine; set AEGIS_BACKEND=cognee for live Cognee)
+uvicorn server.app:app --port 8000
+# 2) Frontend (see web/README.md)
+cd web && npm install && npm run dev        # http://localhost:3000
+```
+
 The real backend uses open-source, self-hosted Cognee with OpenAI for extraction +
 embeddings (config in `.env`). This is a **Best Use of Open Source** entry: open Cognee +
 open synthetic data + open drug-interaction data.

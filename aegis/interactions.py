@@ -148,3 +148,14 @@ SAFE_ALTERNATIVES = {
 
 def suggest_alternatives(indication: str) -> list[str]:
     return SAFE_ALTERNATIVES.get(indication.lower(), [])
+
+
+# Drugs a clinician might propose in the UI — chosen to show a range of outcomes against
+# this patient (some catch the MAOI danger, some are safe).
+CANDIDATE_DRUGS = [
+    {"name": "sumatriptan", "drug_class": "triptan", "indication": "migraine"},
+    {"name": "dextromethorphan", "drug_class": "antitussive", "indication": "cough"},
+    {"name": "pseudoephedrine", "drug_class": "sympathomimetic", "indication": "congestion"},
+    {"name": "ibuprofen", "drug_class": "NSAID", "indication": "pain"},
+    {"name": "acetaminophen", "drug_class": "analgesic", "indication": "migraine"},
+]

@@ -4,6 +4,10 @@ cognee>=1.2
 # MCP server (exposes Canon to coding agents)
 mcp>=1.0
 
+# API backend for the web app
+fastapi>=0.110
+uvicorn>=0.29
+
 # Utilities
 python-dotenv>=1.0
 pydantic>=2.0
