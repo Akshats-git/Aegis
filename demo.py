@@ -1,24 +1,23 @@
-"""Phase 3 demo: reconcile the fragmented records and forget the stale facts (offline).
+"""Phase 4 demo: the full safety story, offline (no keys).
 
     python demo.py
 
-Shows the current-medication picture BEFORE reconciliation (polluted with a stale
-'active' sertraline) and AFTER (Aegis has forgotten it). A clean current picture is the
-foundation the Phase 4 safety net depends on.
+Naive path: a doctor prescribes sumatriptan for a migraine → serotonin syndrome.
+Aegis path: reconcile → forget stale facts → check the clean picture → catch the fatal
+MAOI interaction, cite the source note, and suggest a safe alternative.
 """
 
 from __future__ import annotations
 
-from aegis import get_memory, Medication, ClinicalStatus
+from aegis import get_memory, Medication, ClinicalStatus, Allergy
 from aegis.ingest import ingest_records
 from aegis.reconcile import reconcile, current_medications
+from aegis.interactions import check, suggest_alternatives
 from aegis.sample_patient import records, PROPOSED_DRUG
 
 
-def _print_meds(nodes) -> None:
-    meds = [n for n in nodes if isinstance(n, Medication) and n.status == ClinicalStatus.ACTIVE]
-    for m in meds:
-        print(f"    - {m.name} [{m.drug_class}]  (per {m.source})")
+def line() -> None:
+    print("-" * 68)
 
 
 def main() -> None:
@@ -26,24 +25,51 @@ def main() -> None:
     nodes = records()
     ingest_records(mem)
 
-    print("Current medications BEFORE reconciliation (what a naive record shows):")
-    _print_meds(nodes)
+    proposed = PROPOSED_DRUG  # sumatriptan (triptan) for the migraine
 
+    line()
+    print("NAIVE PATH — doctor without the full, current picture")
+    line()
+    print(f"  Prescribes {proposed['name']} for acute migraine.")
+    print("  ☠️  Result: co-administered with the patient's active MAOI (phenelzine),")
+    print("      this can cause SEROTONIN SYNDROME — potentially fatal.")
+
+    # Aegis path
     actions, clean = reconcile(nodes, mem)
+    current = current_medications(clean)
+    allergies = [n for n in clean if isinstance(n, Allergy)]
+    alerts = check(proposed["name"], proposed["drug_class"], current, allergies)
 
-    print("\nforget(): Aegis reconciled conflicting records —")
-    for a in actions:
-        for fid, fstatus, fsrc in a.forgotten:
-            print(f"    ✗ forgot '{a.entity}' [{fstatus}] from {fsrc}")
-            print(f"      kept the newer fact: [{a.kept_status}] from {a.kept_source}")
+    print()
+    line()
+    print("AEGIS PATH — reconcile, forget, then safety-check the clean picture")
+    line()
+    print("  Current medications (after forgetting stale facts):")
+    for m in current:
+        print(f"    - {m.name} [{m.drug_class}]  (per {m.source})")
 
-    print("\nCurrent medications AFTER reconciliation (clean, trustworthy):")
-    _print_meds(clean)
+    print(f"\n  Safety check: {proposed['name']} ({proposed['drug_class']})")
+    if not alerts:
+        print("    ✅ No interactions found.")
+    for a in alerts:
+        print()
+        print(f"    🚨 {a.severity.value.upper()}: risk of {a.effect}")
+        print(f"       {a.proposed_drug}  ✕  {a.conflicting_drug}")
+        print(f"       Mechanism: {a.mechanism}")
+        print(f"       Action: {a.management}")
+        print(f"       Evidence: patient fact from '{a.patient_source}'")
+        print(f"                 interaction per {a.evidence_source}")
 
-    print("\nWhy it matters:")
-    print(f"  The safety net (Phase 4) will check {PROPOSED_DRUG['name']} against THIS clean")
-    print("  list. If the stale SSRI had lingered, the interaction picture would be wrong.")
-    print("  The active MAOI (phenelzine) correctly remains — and it's the hidden danger.")
+    if any(a.is_blocking for a in alerts):
+        alts = suggest_alternatives("migraine")
+        print("\n  🟢 Safer alternatives for migraine (discuss with prescriber):")
+        for alt in alts:
+            print(f"       - {alt}")
+
+    print()
+    line()
+    print("Aegis caught what a fragmented record would have missed. That's the difference")
+    print("between a filing cabinet and a memory that keeps you safe.")
 
 
 if __name__ == "__main__":
