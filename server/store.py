@@ -1,18 +1,18 @@
-"""In-memory patient state for the web app.
+"""Per-user patient state for the web app.
 
-Holds the current set of clinical facts and source documents. Starts seeded with the demo
-patient (so the story is there out of the box), but users can add their own records:
+Each signed-in user gets their own profile (an isolated set of clinical facts + source
+documents), persisted to disk so it survives restarts. New profiles start EMPTY — there is
+no preloaded demo patient. Users can optionally load a sample profile to explore the app.
 
   * add_from_text(): paste a clinical note -> an LLM extracts structured facts.
   * add_manual():    add a single medication/condition/allergy via a form.
-  * reset()/clear(): back to the demo, or empty.
-
-This is a single shared store (fine for a demo). The safety pipeline reads from here, so
-anything a user adds immediately flows through reconciliation and the interaction checks.
+  * load_sample():   populate with the demo patient (opt-in).
+  * clear():         empty the profile.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import uuid
@@ -24,36 +24,80 @@ from aegis.schema import (
 from aegis.sample_patient import records
 from aegis.ingest import RECORDS_DIR
 
+DATA_DIR = Path(__file__).resolve().parent / "_userdata"
+DATA_DIR.mkdir(exist_ok=True)
+
+_TYPES = {"Medication": Medication, "Condition": Condition, "Allergy": Allergy}
+
 
 def _demo_documents() -> list[dict]:
     return [{"name": f.name, "text": f.read_text()} for f in sorted(RECORDS_DIR.glob("*.md"))]
 
 
+def _encode(node: ClinicalNode) -> dict:
+    return {"type": type(node).__name__, "data": node.model_dump(mode="json")}
+
+
+def _decode(rec: dict) -> ClinicalNode | None:
+    cls = _TYPES.get(rec.get("type", ""))
+    return cls(**rec["data"]) if cls else None
+
+
 class PatientStore:
-    def __init__(self) -> None:
-        self.reset()
+    def __init__(self, user_id: str) -> None:
+        self.user_id = user_id
+        self.facts: list[ClinicalNode] = []
+        self.documents: list[dict] = []
+        self._load()
 
-    def reset(self) -> None:
-        self.facts: list[ClinicalNode] = list(records())
-        self.documents: list[dict] = _demo_documents()
+    # ---- persistence ----
+    def _path(self) -> Path:
+        key = hashlib.sha256(self.user_id.encode()).hexdigest()[:24]
+        return DATA_DIR / f"{key}.json"
 
-    def clear(self) -> None:
-        self.facts = []
-        self.documents = []
+    def _load(self) -> None:
+        p = self._path()
+        if not p.exists():
+            return
+        try:
+            blob = json.loads(p.read_text())
+            self.facts = [n for n in (_decode(r) for r in blob.get("facts", [])) if n]
+            self.documents = blob.get("documents", [])
+        except Exception:
+            self.facts, self.documents = [], []
 
+    def _save(self) -> None:
+        self._path().write_text(json.dumps({
+            "facts": [_encode(n) for n in self.facts],
+            "documents": self.documents,
+        }, indent=2))
+
+    # ---- state ----
     def all_facts(self) -> list[ClinicalNode]:
         return self.facts
 
     def add_fact(self, node: ClinicalNode) -> None:
         self.facts.append(node)
+        self._save()
 
     def add_document(self, name: str, text: str) -> None:
         self.documents.append({"name": name, "text": text})
+        self._save()
+
+    def clear(self) -> None:
+        self.facts = []
+        self.documents = []
+        self._save()
+
+    def load_sample(self) -> None:
+        self.facts = list(records())
+        self.documents = _demo_documents()
+        self._save()
 
     # ---- structured (form) add ----
     def add_manual(self, kind: str, data: dict) -> ClinicalNode:
         nid = f"user-{kind}-{uuid.uuid4().hex[:8]}"
-        source = data.get("source") or "Manually added"
+        source = data.get("source") or "Added by you"
         if kind == "medication":
             node: ClinicalNode = Medication(
                 id=nid, name=data["name"], drug_class=data.get("drug_class"),
@@ -83,15 +127,24 @@ class PatientStore:
         source = source or "Uploaded note"
         extracted = extract_facts(text, source)
         for node in extracted:
-            self.add_fact(node)
-        self.add_document(source, text)
+            self.facts.append(node)
+        self.documents.append({"name": source, "text": text})
+        self._save()
         return extracted
 
 
-store = PatientStore()
+# ---- per-user registry ----
+_stores: dict[str, PatientStore] = {}
 
 
-# Drug classes the interaction checker understands (steer the LLM toward these).
+def get_store(user_id: str) -> PatientStore:
+    uid = (user_id or "anonymous").strip() or "anonymous"
+    if uid not in _stores:
+        _stores[uid] = PatientStore(uid)
+    return _stores[uid]
+
+
+# ---- LLM extraction (shared) ----
 KNOWN_CLASSES = [
     "MAOI", "SSRI", "SNRI", "triptan", "beta-blocker", "NSAID", "opioid",
     "sympathomimetic", "antitussive", "anticoagulant", "ACE inhibitor",
@@ -117,7 +170,7 @@ def extract_facts(text: str, source: str) -> list[ClinicalNode]:
 
     key = os.getenv("LLM_API_KEY")
     if not key:
-        raise RuntimeError("LLM_API_KEY not set — cannot extract from text.")
+        raise RuntimeError("Text extraction is not configured on the server.")
     client = OpenAI(api_key=key)
     model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 

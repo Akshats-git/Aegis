@@ -6,7 +6,7 @@ import { Trash2, Loader2, Check } from "lucide-react";
 import { api } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Button } from "./ui";
 
-export function Erase() {
+export function Erase({ onErased }: { onErased?: () => void }) {
   const [state, setState] = useState<"idle" | "confirm" | "loading" | "done">("idle");
 
   async function doErase() {
@@ -15,6 +15,7 @@ export function Erase() {
       await api.erase();
     } finally {
       setState("done");
+      if (onErased) setTimeout(onErased, 1600);
     }
   }
 
@@ -24,7 +25,7 @@ export function Erase() {
         <SectionTitle
           eyebrow="Your data, your choice"
           title="Delete everything, anytime"
-          desc="Your records belong to you. Remove them whenever you like — permanently, with nothing left behind."
+          desc="Your records belong to you. Remove them whenever you like. Nothing is left behind."
         />
       </Reveal>
       <Reveal>
@@ -79,8 +80,8 @@ export function Erase() {
       </Reveal>
 
       <p className="mx-auto mt-16 max-w-2xl pb-16 text-center text-xs text-muted">
-        Aegis helps you stay informed and safe. It doesn&apos;t replace professional medical
-        advice — always talk to your doctor before changing any medicine.
+        Aegis helps you stay informed and safe. It does not replace professional medical
+        advice. Always talk to your doctor before changing any medicine.
       </p>
     </section>
   );

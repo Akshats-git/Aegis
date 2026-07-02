@@ -33,7 +33,7 @@ export function AskRecord() {
         <SectionTitle
           eyebrow="Just ask"
           title="Ask anything about your health"
-          desc="Get clear answers based on your own records — with a note of where each answer comes from."
+          desc="Get clear answers based on your own records. We show you where each answer comes from."
         />
       </Reveal>
       <Reveal>

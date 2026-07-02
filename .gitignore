@@ -6,3 +6,5 @@ __pycache__/
 .data_storage/
 PITCH.md
 BLOG.md
+# per-user profile data
+server/_userdata/

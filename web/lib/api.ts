@@ -59,15 +59,31 @@ export type RecallResult = {
   engine: string;
 };
 
+export type FactSummary = { kind: string; label: string; status: string; source: string };
+
+// The signed-in user's id, set after auth and sent on every request so the backend serves
+// that user's isolated profile.
+let currentUserId = "";
+export function setUserId(id: string | null | undefined) {
+  currentUserId = id ?? "";
+}
+
+const BASE = "/backend";
+function headers(json = false): Record<string, string> {
+  const h: Record<string, string> = { "X-User-Id": currentUserId };
+  if (json) h["content-type"] = "application/json";
+  return h;
+}
+
 async function get<T>(path: string): Promise<T> {
-  const r = await fetch(path, { cache: "no-store" });
+  const r = await fetch(BASE + path, { cache: "no-store", headers: headers() });
   if (!r.ok) throw new Error(`${path} → ${r.status}`);
   return r.json();
 }
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(path, {
+  const r = await fetch(BASE + path, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: headers(true),
     body: JSON.stringify(body),
     cache: "no-store",
   });
@@ -75,27 +91,25 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return r.json();
 }
 
-export type FactSummary = { kind: string; label: string; status: string; source: string };
-
 export const api = {
-  patient: () => get<{ patient: Patient; documents: SourceDoc[] }>("/api/patient"),
-  records: () => get<{ facts: FactSummary[]; count: number }>("/api/records"),
+  patient: () => get<{ documents: SourceDoc[]; has_data: boolean }>("/patient"),
+  records: () => get<{ facts: FactSummary[]; count: number }>("/records"),
   addText: (text: string, source?: string) =>
     post<{ ok: boolean; extracted?: FactSummary[]; count?: number; error?: string }>(
-      "/api/records/text", { text, source }),
+      "/records/text", { text, source }),
   addManual: (kind: string, data: Record<string, unknown>) =>
     post<{ ok: boolean; added?: FactSummary; error?: string }>(
-      "/api/records/manual", { kind, data }),
-  resetRecords: () => post<{ ok: boolean; count: number }>("/api/records/reset", {}),
-  clearRecords: () => post<{ ok: boolean; count: number }>("/api/records/clear", {}),
-  timeline: () => get<{ medications: Med[] }>("/api/timeline"),
+      "/records/manual", { kind, data }),
+  loadSample: () => post<{ ok: boolean; count: number }>("/records/sample", {}),
+  clearRecords: () => post<{ ok: boolean; count: number }>("/records/clear", {}),
+  timeline: () => get<{ medications: Med[] }>("/timeline"),
   reconcile: () =>
-    get<{ actions: ReconcileAction[]; current_medications: any[] }>("/api/reconcile"),
-  handoff: () => get<Handoff>("/api/handoff"),
+    get<{ actions: ReconcileAction[]; current_medications: any[] }>("/reconcile"),
+  handoff: () => get<Handoff>("/handoff"),
   candidates: () =>
-    get<{ candidates: Candidate[]; default: Candidate }>("/api/candidates"),
+    get<{ candidates: Candidate[]; default: Candidate }>("/candidates"),
   safetyCheck: (name: string, drug_class: string, indication?: string) =>
-    post<SafetyResult>("/api/safety-check", { name, drug_class, indication }),
-  recall: (query: string) => post<RecallResult>("/api/recall", { query }),
-  erase: () => post<{ status: string }>("/api/erase", {}),
+    post<SafetyResult>("/safety-check", { name, drug_class, indication }),
+  recall: (query: string) => post<RecallResult>("/recall", { query }),
+  erase: () => post<{ status: string }>("/erase", {}),
 };

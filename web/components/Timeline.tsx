@@ -22,7 +22,7 @@ export function Timeline({
         <SectionTitle
           eyebrow="Always current"
           title="Your medications, kept up to date"
-          desc="When your records disagree, Aegis trusts the most recent one and quietly clears out medicines you've stopped — so your list is always accurate."
+          desc="When your records disagree, Aegis trusts the most recent one. It clears out medicines you've stopped, so your list stays accurate."
         />
       </Reveal>
 
@@ -102,7 +102,7 @@ export function Timeline({
                 </p>
                 {a.forgotten.map((f, i) => (
                   <div key={i} className="rounded-lg border border-danger/30 bg-danger/5 p-3">
-                    <div className="text-xs text-danger">Removed — no longer taking</div>
+                    <div className="text-xs text-danger">No longer taking</div>
                     <div className="mt-0.5 capitalize">{a.entity}</div>
                     <div className="text-xs text-muted">From: {f.source}</div>
                   </div>

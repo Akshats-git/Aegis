@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FilePlus2, Loader2, Sparkles, RotateCcw, Plus, Check } from "lucide-react";
+import { FilePlus2, Loader2, Sparkles, FlaskConical, Plus, Check } from "lucide-react";
 import { api, type FactSummary } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
 
@@ -63,12 +63,12 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     }
   }
 
-  async function reset() {
+  async function loadSample() {
     setBusy(true);
     try {
-      await api.resetRecords();
+      await api.loadSample();
       setExtracted(null);
-      say("Reset to the demo patient.");
+      say("Loaded a sample profile so you can explore.");
       onChange();
     } finally {
       setBusy(false);
@@ -87,7 +87,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
         <SectionTitle
           eyebrow="Get started"
           title="Add your health records"
-          desc="Paste anything — a doctor's note, a discharge summary, a prescription — and Aegis organizes it for you. Or add a medicine yourself. Everything updates your profile instantly."
+          desc="Paste anything from a doctor's note, discharge summary, or prescription. Aegis organizes it for you. You can also add a medicine yourself. Everything updates your profile right away."
         />
       </Reveal>
 
@@ -110,8 +110,8 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
             >
               <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> Add manually</span>
             </button>
-            <Button tone="ghost" className="ml-auto !px-3 !py-1.5" onClick={reset} disabled={busy}>
-              <RotateCcw className="h-3.5 w-3.5" /> Reset demo
+            <Button tone="ghost" className="ml-auto !px-3 !py-1.5" onClick={loadSample} disabled={busy}>
+              <FlaskConical className="h-3.5 w-3.5" /> Load sample
             </Button>
           </div>
 

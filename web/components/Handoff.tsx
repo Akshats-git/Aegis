@@ -23,7 +23,7 @@ export function Handoff({ data }: { data: HandoffData }) {
         <SectionTitle
           eyebrow="Share in seconds"
           title="Your health summary for any doctor"
-          desc="Everything a new doctor needs to know about you — accurate and up to date — ready the moment you walk in."
+          desc="Everything a new doctor needs to know about you. Accurate, up to date, and ready the moment you walk in."
         />
       </Reveal>
       <Reveal>

@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, ShieldPlus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { Loader2, ArrowUp } from "lucide-react";
 import {
   api,
-  type Patient,
+  setUserId,
   type SourceDoc,
   type Med,
   type ReconcileAction,
   type Handoff as HandoffData,
   type Candidate,
 } from "@/lib/api";
+import { SignIn } from "@/components/SignIn";
 import { Hero } from "@/components/Hero";
 import { AddRecords } from "@/components/AddRecords";
 import { SourceDocs } from "@/components/SourceDocs";
@@ -20,8 +22,8 @@ import { Handoff } from "@/components/Handoff";
 import { AskRecord } from "@/components/AskRecord";
 import { Erase } from "@/components/Erase";
 
-type State = {
-  patient?: Patient;
+type Data = {
+  hasData: boolean;
   docs: SourceDoc[];
   meds: Med[];
   actions: ReconcileAction[];
@@ -31,20 +33,17 @@ type State = {
 };
 
 export default function Page() {
-  const [s, setS] = useState<State>({ docs: [], meds: [], actions: [], candidates: [] });
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const { data: session, status } = useSession();
+  const [d, setD] = useState<Data>({ hasData: false, docs: [], meds: [], actions: [], candidates: [] });
+  const [ready, setReady] = useState(false);
 
-  async function load(initial = false) {
+  const load = useCallback(async () => {
     try {
       const [patient, timeline, reconcile, handoff, candidates] = await Promise.all([
-        api.patient(),
-        api.timeline(),
-        api.reconcile(),
-        api.handoff(),
-        api.candidates(),
+        api.patient(), api.timeline(), api.reconcile(), api.handoff(), api.candidates(),
       ]);
-      setS({
-        patient: patient.patient,
+      setD({
+        hasData: patient.has_data,
         docs: patient.documents,
         meds: timeline.medications,
         actions: reconcile.actions,
@@ -52,35 +51,18 @@ export default function Page() {
         candidates: candidates.candidates,
         def: candidates.default,
       });
-      setStatus("ready");
-    } catch {
-      if (initial) setStatus("error");
+    } finally {
+      setReady(true);
     }
-  }
-
-  useEffect(() => {
-    load(true);
   }, []);
 
-  if (status === "error") {
-    return (
-      <main className="grid min-h-screen place-items-center px-6 text-center">
-        <div className="max-w-md">
-          <ShieldPlus className="mx-auto h-10 w-10 text-teal" />
-          <h1 className="mt-4 text-2xl font-semibold">We couldn&apos;t connect</h1>
-          <p className="mt-2 text-sm text-muted">
-            Something went wrong loading your records. Please try again in a moment.
-          </p>
-          <button
-            onClick={() => { setStatus("loading"); load(true); }}
-            className="mt-5 rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-black"
-          >
-            Try again
-          </button>
-        </div>
-      </main>
-    );
-  }
+  useEffect(() => {
+    const uid = (session?.user as { id?: string } | undefined)?.id;
+    if (uid) {
+      setUserId(uid);
+      load();
+    }
+  }, [session, load]);
 
   if (status === "loading") {
     return (
@@ -90,16 +72,40 @@ export default function Page() {
     );
   }
 
+  if (status === "unauthenticated" || !session) {
+    return <SignIn />;
+  }
+
   return (
     <main className="pb-8">
-      <Hero patient={s.patient} />
-      <AddRecords onChange={() => load(false)} />
-      <SourceDocs docs={s.docs} />
-      <Timeline meds={s.meds} actions={s.actions} />
-      <SafetyCheck candidates={s.candidates} initial={s.def} />
-      {s.handoff && <Handoff data={s.handoff} />}
-      <AskRecord />
-      <Erase />
+      <Hero user={session.user ?? {}} onSignOut={() => signOut()} />
+      <AddRecords onChange={load} />
+
+      {!ready ? (
+        <div className="grid place-items-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-teal" />
+        </div>
+      ) : d.hasData ? (
+        <>
+          <SourceDocs docs={d.docs} />
+          <Timeline meds={d.meds} actions={d.actions} />
+          <SafetyCheck candidates={d.candidates} initial={d.def} />
+          {d.handoff && <Handoff data={d.handoff} />}
+          <AskRecord />
+          <Erase onErased={load} />
+        </>
+      ) : (
+        <section className="mx-auto mt-16 max-w-6xl px-6">
+          <div className="card flex flex-col items-center gap-3 p-12 text-center">
+            <ArrowUp className="h-6 w-6 text-teal" />
+            <h3 className="text-xl font-semibold">Add your first record to get started</h3>
+            <p className="max-w-md text-sm text-muted">
+              Once you add a record above, you&apos;ll see your medication timeline, instant
+              safety checks and a summary you can share with any doctor.
+            </p>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
