@@ -6,6 +6,11 @@
   color-scheme: dark;
 }
 
+html {
+  /* Scale the whole UI up slightly (all rem-based sizes grow proportionally). */
+  font-size: 17px;
+}
+
 body {
   background-color: #06070a;
   color: #e7ecf3;
