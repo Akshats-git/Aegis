@@ -20,9 +20,9 @@ export function Timeline({
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="remember() + forget()"
-          title="One honest, self-correcting picture"
-          desc="Aegis reconciles conflicting records: the most recent note wins, and stale facts are forgotten so they can never mislead the next decision."
+          eyebrow="Always current"
+          title="Your medications, kept up to date"
+          desc="When your records disagree, Aegis trusts the most recent one and quietly clears out medicines you've stopped — so your list is always accurate."
         />
       </Reveal>
 
@@ -70,10 +70,10 @@ export function Timeline({
                     )}
                     {m.danger && (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold text-danger">
-                        <AlertTriangle className="h-3.5 w-3.5" /> MAOI
+                        <AlertTriangle className="h-3.5 w-3.5" /> needs care with new medicines
                       </span>
                     )}
-                    {m.forgotten && <Badge tone="danger">✗ forgotten (stale)</Badge>}
+                    {m.forgotten && <Badge tone="danger">removed · out of date</Badge>}
                   </div>
                   <div className="mt-0.5 pl-6 font-mono text-xs text-muted">
                     {m.started ?? "?"} → {m.stopped ?? "present"} · {m.source}
@@ -88,32 +88,31 @@ export function Timeline({
           <Card className="h-full border-teal/20">
             <div className="mb-3 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-teal" />
-              <span className="label text-teal">Reconciliation</span>
+              <span className="label text-teal">What we updated for you</span>
             </div>
             {actions.length === 0 && (
-              <p className="text-sm text-muted">No conflicts detected.</p>
+              <p className="text-sm text-muted">Everything looks up to date.</p>
             )}
             {actions.map((a) => (
               <div key={a.entity} className="space-y-3 text-sm">
                 <p className="text-muted">
-                  Conflicting records for{" "}
-                  <span className="font-medium text-ink capitalize">{a.entity}</span>:
+                  Your records disagreed about{" "}
+                  <span className="font-medium text-ink capitalize">{a.entity}</span>, so we
+                  used the most recent one:
                 </p>
                 {a.forgotten.map((f, i) => (
                   <div key={i} className="rounded-lg border border-danger/30 bg-danger/5 p-3">
-                    <div className="text-xs text-danger">✗ forgotten</div>
-                    <div className="mt-0.5">
-                      {a.entity} <span className="text-muted">[{f.status}]</span>
-                    </div>
-                    <div className="font-mono text-xs text-muted">{f.source}</div>
+                    <div className="text-xs text-danger">Removed — no longer taking</div>
+                    <div className="mt-0.5 capitalize">{a.entity}</div>
+                    <div className="text-xs text-muted">From: {f.source}</div>
                   </div>
                 ))}
                 <div className="rounded-lg border border-teal/30 bg-teal/5 p-3">
-                  <div className="text-xs text-teal">✓ kept (most recent)</div>
-                  <div className="mt-0.5">
-                    {a.entity} <span className="text-muted">[{a.kept_status}]</span>
+                  <div className="text-xs text-teal">Current</div>
+                  <div className="mt-0.5 capitalize">
+                    {a.entity} <span className="text-muted">· {a.kept_status}</span>
                   </div>
-                  <div className="font-mono text-xs text-muted">{a.kept_source}</div>
+                  <div className="text-xs text-muted">From: {a.kept_source}</div>
                 </div>
               </div>
             ))}

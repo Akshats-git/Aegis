@@ -7,9 +7,9 @@ import { api, type RecallResult } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
 
 const SUGGESTIONS = [
-  "List the current medications and what to avoid prescribing.",
-  "Is it safe to prescribe an SSRI?",
-  "What antidepressant is the patient on now?",
+  "What medicines am I currently taking?",
+  "Is it safe for me to take ibuprofen?",
+  "What should a new doctor know about me?",
 ];
 
 export function AskRecord() {
@@ -31,9 +31,9 @@ export function AskRecord() {
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="recall() · natural language"
-          title="Ask the record anything"
-          desc="Cognee answers over the knowledge graph with cited evidence, so every claim is traceable."
+          eyebrow="Just ask"
+          title="Ask anything about your health"
+          desc="Get clear answers based on your own records — with a note of where each answer comes from."
         />
       </Reveal>
       <Reveal>
@@ -75,16 +75,15 @@ export function AskRecord() {
               <div className="mb-2 flex items-center gap-2">
                 <Quote className="h-4 w-4 text-teal" />
                 <span className="label text-teal">Answer</span>
-                <Badge tone="muted">engine: {res.engine}</Badge>
               </div>
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{res.answer}</p>
               {res.evidence.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <div className="label">Cited evidence</div>
+                  <div className="label">Based on your records</div>
                   {res.evidence.map((e, i) => (
                     <div key={i} className="rounded-lg border border-line bg-black/20 p-3 text-xs">
                       <div className="text-muted">{e.text}</div>
-                      <div className="mt-1 font-mono text-teal">↳ {e.source}</div>
+                      <div className="mt-1 text-teal">From: {e.source}</div>
                     </div>
                   ))}
                 </div>

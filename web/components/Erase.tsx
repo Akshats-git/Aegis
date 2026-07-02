@@ -22,9 +22,9 @@ export function Erase() {
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="forget() · right to be forgotten"
-          title="Erase me — and mean it"
-          desc="Not a soft flag. Aegis purges the record from memory; afterwards, a query finds nothing at all."
+          eyebrow="Your data, your choice"
+          title="Delete everything, anytime"
+          desc="Your records belong to you. Remove them whenever you like — permanently, with nothing left behind."
         />
       </Reveal>
       <Reveal>
@@ -41,17 +41,17 @@ export function Erase() {
                   <Check className="h-5 w-5 text-teal" />
                 </div>
                 <div>
-                  <div className="font-semibold text-teal">Record fully erased</div>
+                  <div className="font-semibold text-teal">Everything has been deleted</div>
                   <div className="text-sm text-muted">
-                    Cognee has no memory of this patient — recall now returns nothing.
+                    Your records are permanently gone. Nothing was kept.
                   </div>
                 </div>
               </motion.div>
             ) : (
               <motion.div key="idle" className="flex flex-wrap items-center justify-between gap-4">
                 <p className="max-w-xl text-sm text-muted">
-                  A patient can invoke their right to be forgotten. This deletes the graph and
-                  vector memory for the entire record.
+                  This permanently removes your entire health record from Aegis. This cannot
+                  be undone.
                 </p>
                 {state === "confirm" ? (
                   <div className="flex gap-2">
@@ -79,8 +79,8 @@ export function Erase() {
       </Reveal>
 
       <p className="mx-auto mt-16 max-w-2xl pb-16 text-center text-xs text-muted">
-        Aegis is a patient-advocacy / decision-support prototype using synthetic data. It is
-        not a medical device and does not replace professional medical judgement.
+        Aegis helps you stay informed and safe. It doesn&apos;t replace professional medical
+        advice — always talk to your doctor before changing any medicine.
       </p>
     </section>
   );

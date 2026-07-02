@@ -36,9 +36,9 @@ export function SafetyCheck({
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="The moment that matters"
-          title="Prescribe safely — before harm, not after"
-          desc="Pick what a new doctor might prescribe today. Aegis checks it against the clean, current record and open interaction data — and cites its sources."
+          eyebrow="Peace of mind"
+          title="Check a new medicine before you take it"
+          desc="A doctor suggested something new? Check it here first. Aegis compares it against your current medicines and warns you if it isn't safe."
         />
       </Reveal>
 
@@ -47,7 +47,7 @@ export function SafetyCheck({
           <Card>
             <div className="mb-3 flex items-center gap-2">
               <Stethoscope className="h-4 w-4 text-teal" />
-              <span className="label">Proposed prescription</span>
+              <span className="label">Pick a medicine to check</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {candidates.map((c) => (
@@ -61,9 +61,7 @@ export function SafetyCheck({
                   }`}
                 >
                   <div className="font-medium capitalize">{c.name}</div>
-                  <div className="text-xs text-muted">
-                    {c.drug_class} · {c.indication}
-                  </div>
+                  <div className="text-xs text-muted">for {c.indication}</div>
                 </button>
               ))}
             </div>
@@ -117,10 +115,10 @@ export function SafetyCheck({
                     )}
                     <div>
                       <div className={`text-xl font-bold ${block ? "text-danger" : "text-teal"}`}>
-                        {block ? "DO NOT PRESCRIBE" : "Appears safe"}
+                        {block ? "Not safe for you" : "Looks safe"}
                       </div>
                       <div className="text-sm capitalize text-muted">
-                        {result.proposed.name} · {result.proposed.drug_class}
+                        {result.proposed.name}
                       </div>
                     </div>
                   </div>
@@ -129,23 +127,19 @@ export function SafetyCheck({
                     <div key={i} className="mt-5 space-y-2 border-t border-line pt-4">
                       <div className="flex items-center gap-2 text-danger">
                         <FileWarning className="h-4 w-4" />
-                        <span className="font-semibold uppercase tracking-wide">
-                          {a.severity}
-                        </span>
-                        <span>· {a.effect}</span>
+                        <span className="font-semibold">Risk: {a.effect}</span>
                       </div>
-                      <div className="text-sm">
-                        <span className="font-medium capitalize">{a.proposed_drug}</span>{" "}
-                        <span className="text-muted">✕</span>{" "}
-                        <span className="font-medium">{a.conflicting_drug}</span>
+                      <div className="text-sm text-muted">
+                        It can react badly with{" "}
+                        <span className="font-medium text-ink">{a.conflicting_drug}</span>,
+                        which you&apos;re currently taking.
                       </div>
-                      <div className="text-sm text-muted">{a.mechanism}</div>
                       <div className="rounded-lg border border-line bg-black/20 p-3 text-xs text-muted">
                         {a.management}
                       </div>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <Badge tone="muted">📄 {a.patient_source}</Badge>
-                        <Badge tone="muted">📚 {a.evidence_source}</Badge>
+                      <div className="pt-1 text-xs text-muted">
+                        Based on your record from{" "}
+                        <span className="text-ink">{a.patient_source}</span>.
                       </div>
                     </div>
                   ))}
@@ -153,7 +147,7 @@ export function SafetyCheck({
                   {block && result.alternatives.length > 0 && (
                     <div className="mt-4 border-t border-line pt-4">
                       <div className="mb-2 text-sm font-semibold text-teal">
-                        Safer alternatives
+                        Safer options to ask your doctor about
                       </div>
                       <ul className="space-y-1 text-sm text-muted">
                         {result.alternatives.map((alt) => (

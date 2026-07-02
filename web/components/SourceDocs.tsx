@@ -20,9 +20,9 @@ export function SourceDocs({ docs }: { docs: SourceDoc[] }) {
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="The problem"
-          title="Fragmented across four clinics"
-          desc="No single doctor sees the whole picture. The dangerous facts hide in notes the next provider will never open."
+          eyebrow="All in one place"
+          title="Every record, together"
+          desc="Your notes from different clinics, gathered in one place. Tap any one to read it."
         />
       </Reveal>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

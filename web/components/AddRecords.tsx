@@ -85,9 +85,9 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="Your records"
-          title="Add your own medical records"
-          desc="Paste a clinical note and Aegis extracts the facts, or add a medication by hand. Everything you add flows through the timeline, reconciliation and safety checks below."
+          eyebrow="Get started"
+          title="Add your health records"
+          desc="Paste anything — a doctor's note, a discharge summary, a prescription — and Aegis organizes it for you. Or add a medicine yourself. Everything updates your profile instantly."
         />
       </Reveal>
 

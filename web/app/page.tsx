@@ -67,13 +67,16 @@ export default function Page() {
       <main className="grid min-h-screen place-items-center px-6 text-center">
         <div className="max-w-md">
           <ShieldPlus className="mx-auto h-10 w-10 text-teal" />
-          <h1 className="mt-4 text-2xl font-semibold">Backend not reachable</h1>
+          <h1 className="mt-4 text-2xl font-semibold">We couldn&apos;t connect</h1>
           <p className="mt-2 text-sm text-muted">
-            Start the API, then reload:
+            Something went wrong loading your records. Please try again in a moment.
           </p>
-          <pre className="mt-3 rounded-lg border border-line bg-black/30 p-3 text-left font-mono text-xs text-teal">
-            uvicorn server.app:app --port 8000
-          </pre>
+          <button
+            onClick={() => { setStatus("loading"); load(true); }}
+            className="mt-5 rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-black"
+          >
+            Try again
+          </button>
         </div>
       </main>
     );

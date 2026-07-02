@@ -21,9 +21,9 @@ export function Handoff({ data }: { data: HandoffData }) {
     <section className="mx-auto mt-24 max-w-6xl px-6">
       <Reveal>
         <SectionTitle
-          eyebrow="recall()"
-          title="What a new doctor instantly knows"
-          desc="A trustworthy, current handoff — reconciled and sourced — the moment the patient walks in."
+          eyebrow="Share in seconds"
+          title="Your health summary for any doctor"
+          desc="Everything a new doctor needs to know about you — accurate and up to date — ready the moment you walk in."
         />
       </Reveal>
       <Reveal>
