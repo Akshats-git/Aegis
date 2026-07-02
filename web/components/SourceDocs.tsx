@@ -28,9 +28,9 @@ export function SourceDocs({ docs }: { docs: SourceDoc[] }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {docs.map((d, i) => (
           <Reveal key={d.name} delay={i * 0.06}>
-            <Card className="group flex h-full flex-col transition-colors hover:border-teal/30">
+            <Card className="group flex h-full flex-col transition-colors hover:border-rose/30">
               <button className="flex w-full items-start gap-3 text-left" onClick={() => setOpen(open === d.name ? null : d.name)}>
-                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-teal" />
+                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-rose" />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium capitalize">{prettyName(d.name)}</div>
                   <div className="mt-0.5 font-mono text-xs text-muted">{dateOf(d.name)}</div>

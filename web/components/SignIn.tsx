@@ -22,12 +22,12 @@ export function SignIn() {
         className="relative w-full max-w-[420px]"
       >
         {/* soft glow behind the card */}
-        <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-teal/10 blur-3xl" />
+        <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-rose/10 blur-3xl" />
 
         <div className="card overflow-hidden p-8 sm:p-10">
           <div className="flex flex-col items-center text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl border border-teal/30 bg-teal/10">
-              <ShieldPlus className="h-7 w-7 text-teal" />
+            <div className="grid h-14 w-14 place-items-center rounded-2xl border border-rose/30 bg-rose/10">
+              <ShieldPlus className="h-7 w-7 text-rose" />
             </div>
             <h1 className="mt-5 text-2xl font-semibold tracking-tight">
               All your health records, in one place
@@ -50,7 +50,7 @@ export function SignIn() {
             <button
               onClick={() => signIn("guest", { callbackUrl: "/" })}
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-transform hover:scale-[1.01] active:scale-[0.99] ${
-                googleEnabled ? "border border-line bg-white/5 text-ink" : "bg-teal text-black"
+                googleEnabled ? "border border-line bg-white/5 text-ink" : "bg-rose text-black"
               }`}
             >
               Continue as guest
@@ -67,7 +67,7 @@ export function SignIn() {
             {FEATURES.map((f) => (
               <div key={f.text} className="flex items-center gap-3 text-sm text-muted">
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
-                  <f.icon className="h-4 w-4 text-teal" />
+                  <f.icon className="h-4 w-4 text-rose" />
                 </div>
                 <span>{f.text}</span>
               </div>

@@ -79,7 +79,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-black/20 px-3 py-2 text-sm outline-none focus:border-teal/50";
+    "w-full rounded-lg border border-line bg-black/20 px-3 py-2 text-sm outline-none focus:border-rose/50";
 
   return (
     <section className="mx-auto mt-24 max-w-6xl px-6">
@@ -97,7 +97,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
             <button
               onClick={() => setTab("paste")}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === "paste" ? "bg-teal/15 text-teal" : "text-muted hover:text-ink"
+                tab === "paste" ? "bg-rose/15 text-rose" : "text-muted hover:text-ink"
               }`}
             >
               <span className="inline-flex items-center gap-1.5"><Sparkles className="h-4 w-4" /> Paste a note</span>
@@ -105,7 +105,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
             <button
               onClick={() => setTab("manual")}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === "manual" ? "bg-teal/15 text-teal" : "text-muted hover:text-ink"
+                tab === "manual" ? "bg-rose/15 text-rose" : "text-muted hover:text-ink"
               }`}
             >
               <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> Add manually</span>
@@ -148,7 +148,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 <div className="flex flex-wrap gap-2 pt-1">
                   {extracted.length === 0 && <span className="text-sm text-muted">No facts found.</span>}
                   {extracted.map((f, i) => (
-                    <Badge key={i} tone="teal">{f.kind}: {f.label}</Badge>
+                    <Badge key={i} tone="rose">{f.kind}: {f.label}</Badge>
                   ))}
                 </div>
               )}
@@ -161,7 +161,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                     key={k}
                     onClick={() => { setKind(k); setForm({ status: "active" }); }}
                     className={`rounded-lg border px-3 py-1.5 text-sm capitalize transition-colors ${
-                      kind === k ? "border-teal/50 bg-teal/10 text-teal" : "border-line text-muted"
+                      kind === k ? "border-rose/50 bg-rose/10 text-rose" : "border-line text-muted"
                     }`}
                   >
                     {k}
@@ -209,7 +209,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-teal/10 px-3 py-2 text-sm text-teal"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-rose/30 bg-rose/10 px-3 py-2 text-sm text-rose"
               >
                 <Check className="h-4 w-4" /> {flash}
               </motion.div>

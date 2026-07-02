@@ -13,8 +13,8 @@ const config: Config = {
         line: "rgba(255,255,255,0.08)",
         ink: "#e7ecf3",
         muted: "#8b95a7",
-        teal: "#2dd4bf",
-        danger: "#fb5a6a",
+        rose: "#fb7185",
+        danger: "#e11d48",
         warn: "#f5b544",
       },
       fontFamily: {

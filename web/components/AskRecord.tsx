@@ -73,8 +73,8 @@ export function AskRecord() {
               className="mt-5 border-t border-line pt-5"
             >
               <div className="mb-2 flex items-center gap-2">
-                <Quote className="h-4 w-4 text-teal" />
-                <span className="label text-teal">Answer</span>
+                <Quote className="h-4 w-4 text-rose" />
+                <span className="label text-rose">Answer</span>
               </div>
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{res.answer}</p>
               {res.evidence.length > 0 && (
@@ -83,7 +83,7 @@ export function AskRecord() {
                   {res.evidence.map((e, i) => (
                     <div key={i} className="rounded-lg border border-line bg-black/20 p-3 text-xs">
                       <div className="text-muted">{e.text}</div>
-                      <div className="mt-1 text-teal">From: {e.source}</div>
+                      <div className="mt-1 text-rose">From: {e.source}</div>
                     </div>
                   ))}
                 </div>

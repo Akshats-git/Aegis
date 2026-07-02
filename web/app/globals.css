@@ -12,14 +12,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient background: subtle grid + teal radial glow */
+/* Ambient background: subtle grid + rose radial glow */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(60rem 40rem at 70% -10%, rgba(45, 212, 191, 0.10), transparent 60%),
-    radial-gradient(50rem 40rem at 10% 10%, rgba(99, 102, 241, 0.08), transparent 55%),
+    radial-gradient(60rem 40rem at 70% -10%, rgba(251, 113, 133, 0.12), transparent 60%),
+    radial-gradient(50rem 40rem at 10% 10%, rgba(225, 29, 72, 0.08), transparent 55%),
     #06070a;
 }
 .app-bg::after {
@@ -44,13 +44,13 @@ body {
     @apply text-xs font-medium uppercase tracking-wider text-muted;
   }
   .gradient-text {
-    @apply bg-gradient-to-r from-teal via-teal to-indigo-300 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-rose via-rose to-pink-300 bg-clip-text text-transparent;
   }
 }
 
 /* Shimmering border for hero accents */
 .shimmer-border {
-  background: linear-gradient(110deg, transparent 30%, rgba(45, 212, 191, 0.35) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(251, 113, 133, 0.35) 50%, transparent 70%);
   background-size: 200% 100%;
   animation: shimmer 3s linear infinite;
 }

@@ -24,7 +24,7 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={user.image} alt="" className="h-7 w-7 rounded-full" />
         ) : (
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-teal/15 text-xs font-semibold text-teal">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-rose/15 text-xs font-semibold text-rose">
             {initials(user.name, user.email)}
           </span>
         )}
@@ -62,8 +62,8 @@ export function Hero({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
     <header className="relative mx-auto max-w-6xl px-6 pt-8">
       <nav className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl border border-teal/30 bg-teal/10">
-            <ShieldPlus className="h-5 w-5 text-teal" />
+          <div className="grid h-9 w-9 place-items-center rounded-xl border border-rose/30 bg-rose/10">
+            <ShieldPlus className="h-5 w-5 text-rose" />
           </div>
           <span className="text-lg font-semibold tracking-tight">Aegis</span>
         </div>
@@ -71,13 +71,13 @@ export function Hero({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
       </nav>
 
       <div className="relative mt-14 overflow-hidden rounded-3xl border border-line bg-panel p-8 backdrop-blur-xl sm:p-12">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-teal/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-rose/10 blur-3xl" />
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Badge tone="teal">Your personal health record</Badge>
+          <Badge tone="rose">Your personal health record</Badge>
           <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
             Welcome back, <span className="gradient-text">{firstName}</span>.
           </h1>

@@ -46,7 +46,7 @@ export function SafetyCheck({
         <Reveal>
           <Card>
             <div className="mb-3 flex items-center gap-2">
-              <Stethoscope className="h-4 w-4 text-teal" />
+              <Stethoscope className="h-4 w-4 text-rose" />
               <span className="label">Pick a medicine to check</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ export function SafetyCheck({
                   onClick={() => run(c)}
                   className={`rounded-xl border px-3 py-2 text-left text-sm transition-all ${
                     selected.name === c.name
-                      ? "border-teal/50 bg-teal/10"
+                      ? "border-rose/50 bg-rose/10"
                       : "border-line bg-white/5 hover:bg-white/10"
                   }`}
                 >
@@ -104,17 +104,17 @@ export function SafetyCheck({
                   className={`overflow-hidden rounded-2xl border p-6 ${
                     block
                       ? "border-danger/50 bg-danger/10"
-                      : "border-teal/50 bg-teal/10"
+                      : "border-rose/50 bg-rose/10"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     {block ? (
                       <ShieldAlert className="h-8 w-8 text-danger" />
                     ) : (
-                      <ShieldCheck className="h-8 w-8 text-teal" />
+                      <ShieldCheck className="h-8 w-8 text-rose" />
                     )}
                     <div>
-                      <div className={`text-xl font-bold ${block ? "text-danger" : "text-teal"}`}>
+                      <div className={`text-xl font-bold ${block ? "text-danger" : "text-rose"}`}>
                         {block ? "Not safe for you" : "Looks safe"}
                       </div>
                       <div className="text-sm capitalize text-muted">
@@ -146,7 +146,7 @@ export function SafetyCheck({
 
                   {block && result.alternatives.length > 0 && (
                     <div className="mt-4 border-t border-line pt-4">
-                      <div className="mb-2 text-sm font-semibold text-teal">
+                      <div className="mb-2 text-sm font-semibold text-rose">
                         Safer options to ask your doctor about
                       </div>
                       <ul className="space-y-1 text-sm text-muted">

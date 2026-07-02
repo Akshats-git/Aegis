@@ -67,7 +67,7 @@ export default function Page() {
   if (status === "loading") {
     return (
       <main className="grid min-h-screen place-items-center">
-        <Loader2 className="h-6 w-6 animate-spin text-teal" />
+        <Loader2 className="h-6 w-6 animate-spin text-rose" />
       </main>
     );
   }
@@ -83,7 +83,7 @@ export default function Page() {
 
       {!ready ? (
         <div className="grid place-items-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-teal" />
+          <Loader2 className="h-6 w-6 animate-spin text-rose" />
         </div>
       ) : d.hasData ? (
         <>
@@ -97,7 +97,7 @@ export default function Page() {
       ) : (
         <section className="mx-auto mt-16 max-w-6xl px-6">
           <div className="card flex flex-col items-center gap-3 p-12 text-center">
-            <ArrowUp className="h-6 w-6 text-teal" />
+            <ArrowUp className="h-6 w-6 text-rose" />
             <h3 className="text-xl font-semibold">Add your first record to get started</h3>
             <p className="max-w-md text-sm text-muted">
               Once you add a record above, you&apos;ll see your medication timeline, instant

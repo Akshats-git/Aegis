@@ -28,14 +28,14 @@ export function Handoff({ data }: { data: HandoffData }) {
       </Reveal>
       <Reveal>
         <Card className="grid gap-6 sm:grid-cols-2">
-          <Row icon={<HeartPulse className="h-4 w-4 text-teal" />} title="Active conditions">
+          <Row icon={<HeartPulse className="h-4 w-4 text-rose" />} title="Active conditions">
             {data.conditions.map((c) => (
               <Badge key={c}>{c}</Badge>
             ))}
           </Row>
-          <Row icon={<Pill className="h-4 w-4 text-teal" />} title="Current medications">
+          <Row icon={<Pill className="h-4 w-4 text-rose" />} title="Current medications">
             {data.medications.map((m) => (
-              <Badge key={m.name} tone={m.drug_class === "MAOI" ? "danger" : "teal"}>
+              <Badge key={m.name} tone={m.drug_class === "MAOI" ? "danger" : "rose"}>
                 {m.name} {m.dose ? `· ${m.dose}` : ""}
               </Badge>
             ))}

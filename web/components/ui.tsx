@@ -46,7 +46,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="mb-5">
-      <div className="label text-teal">{eyebrow}</div>
+      <div className="label text-rose">{eyebrow}</div>
       <h2 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h2>
       {desc && <p className="mt-1 max-w-2xl text-sm text-muted">{desc}</p>}
     </div>
@@ -59,12 +59,12 @@ export function Badge({
   className,
 }: {
   children: React.ReactNode;
-  tone?: "default" | "teal" | "danger" | "warn" | "muted";
+  tone?: "default" | "rose" | "danger" | "warn" | "muted";
   className?: string;
 }) {
   const tones: Record<string, string> = {
     default: "text-ink",
-    teal: "border-teal/30 bg-teal/10 text-teal",
+    rose: "border-rose/30 bg-rose/10 text-rose",
     danger: "border-danger/40 bg-danger/10 text-danger",
     warn: "border-warn/30 bg-warn/10 text-warn",
     muted: "text-muted",
@@ -86,7 +86,7 @@ export function Button({
   className?: string;
 }) {
   const tones: Record<string, string> = {
-    primary: "bg-teal text-black hover:bg-teal/90",
+    primary: "bg-rose text-black hover:bg-rose/90",
     ghost: "border border-line bg-white/5 text-ink hover:bg-white/10",
     danger: "border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20",
   };

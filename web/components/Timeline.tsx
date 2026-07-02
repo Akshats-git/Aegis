@@ -6,7 +6,7 @@ import type { Med, ReconcileAction } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge } from "./ui";
 
 function classTone(c: string | null) {
-  return c === "MAOI" ? "text-danger" : "text-teal";
+  return c === "MAOI" ? "text-danger" : "text-rose";
 }
 
 export function Timeline({
@@ -45,7 +45,7 @@ export function Timeline({
                       m.status === "active"
                         ? m.danger
                           ? "border-danger bg-danger"
-                          : "border-teal bg-teal"
+                          : "border-rose bg-rose"
                         : "border-muted bg-bg"
                     }`}
                   />
@@ -64,7 +64,7 @@ export function Timeline({
                     </span>
                     <Badge tone="muted">{m.drug_class}</Badge>
                     {m.status === "active" ? (
-                      <Badge tone={m.danger ? "danger" : "teal"}>active</Badge>
+                      <Badge tone={m.danger ? "danger" : "rose"}>active</Badge>
                     ) : (
                       <Badge tone="muted">{m.status}</Badge>
                     )}
@@ -85,10 +85,10 @@ export function Timeline({
         </Reveal>
 
         <Reveal delay={0.1}>
-          <Card className="h-full border-teal/20">
+          <Card className="h-full border-rose/20">
             <div className="mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-teal" />
-              <span className="label text-teal">What we updated for you</span>
+              <Sparkles className="h-4 w-4 text-rose" />
+              <span className="label text-rose">What we updated for you</span>
             </div>
             {actions.length === 0 && (
               <p className="text-sm text-muted">Everything looks up to date.</p>
@@ -107,8 +107,8 @@ export function Timeline({
                     <div className="text-xs text-muted">From: {f.source}</div>
                   </div>
                 ))}
-                <div className="rounded-lg border border-teal/30 bg-teal/5 p-3">
-                  <div className="text-xs text-teal">Current</div>
+                <div className="rounded-lg border border-rose/30 bg-rose/5 p-3">
+                  <div className="text-xs text-rose">Current</div>
                   <div className="mt-0.5 capitalize">
                     {a.entity} <span className="text-muted">· {a.kept_status}</span>
                   </div>

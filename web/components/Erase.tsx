@@ -38,11 +38,11 @@ export function Erase({ onErased }: { onErased?: () => void }) {
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex items-center gap-3"
               >
-                <div className="grid h-10 w-10 place-items-center rounded-full border border-teal/40 bg-teal/10">
-                  <Check className="h-5 w-5 text-teal" />
+                <div className="grid h-10 w-10 place-items-center rounded-full border border-rose/40 bg-rose/10">
+                  <Check className="h-5 w-5 text-rose" />
                 </div>
                 <div>
-                  <div className="font-semibold text-teal">Everything has been deleted</div>
+                  <div className="font-semibold text-rose">Everything has been deleted</div>
                   <div className="text-sm text-muted">
                     Your records are permanently gone. Nothing was kept.
                   </div>
