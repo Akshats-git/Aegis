@@ -17,7 +17,7 @@ export function Timeline({
   actions: ReconcileAction[];
 }) {
   return (
-    <section className="mx-auto mt-24 max-w-6xl px-6">
+    <section>
       <Reveal>
         <SectionTitle
           eyebrow="Always current"

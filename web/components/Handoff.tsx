@@ -18,7 +18,7 @@ function Row({ icon, title, children }: { icon: React.ReactNode; title: string; 
 
 export function Handoff({ data }: { data: HandoffData }) {
   return (
-    <section className="mx-auto mt-24 max-w-6xl px-6">
+    <section>
       <Reveal>
         <SectionTitle
           eyebrow="Share in seconds"

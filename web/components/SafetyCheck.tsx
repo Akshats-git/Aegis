@@ -33,7 +33,7 @@ export function SafetyCheck({
   const block = result?.verdict === "block";
 
   return (
-    <section className="mx-auto mt-24 max-w-6xl px-6">
+    <section>
       <Reveal>
         <SectionTitle
           eyebrow="Peace of mind"

@@ -82,7 +82,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     "w-full rounded-lg border border-line bg-black/20 px-3 py-2 text-sm outline-none focus:border-rose/50";
 
   return (
-    <section className="mx-auto mt-24 max-w-6xl px-6">
+    <section>
       <Reveal>
         <SectionTitle
           eyebrow="Get started"

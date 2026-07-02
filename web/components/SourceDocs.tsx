@@ -17,7 +17,7 @@ function dateOf(f: string) {
 export function SourceDocs({ docs }: { docs: SourceDoc[] }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
-    <section className="mx-auto mt-24 max-w-6xl px-6">
+    <section>
       <Reveal>
         <SectionTitle
           eyebrow="All in one place"
