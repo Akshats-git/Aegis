@@ -40,7 +40,11 @@ body {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-panel backdrop-blur-xl;
+    @apply rounded-2xl border bg-panel backdrop-blur-xl;
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 12px 30px -14px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs font-medium;

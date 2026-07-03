@@ -13,7 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export function AskRecord() {
-  const [q, setQ] = useState(SUGGESTIONS[0]);
+  const [q, setQ] = useState("");
   const [res, setRes] = useState<RecallResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,10 +46,10 @@ export function AskRecord() {
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && ask()}
                 className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted"
-                placeholder="Ask about this patient's record…"
+                placeholder="Ask a question about your health"
               />
             </div>
-            <Button onClick={ask} disabled={loading}>
+            <Button onClick={ask} disabled={loading || !q.trim()}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ask"}
             </Button>
           </div>

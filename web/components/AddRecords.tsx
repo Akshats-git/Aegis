@@ -120,7 +120,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={SAMPLE_NOTE}
+                placeholder="Paste a doctor's note, discharge summary, or prescription here."
                 rows={5}
                 className={`${inputCls} resize-y font-mono text-xs leading-relaxed`}
               />
@@ -128,7 +128,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 <input
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  placeholder="Source label (e.g. Neurology note 2026-05-20)"
+                  placeholder="Where is this from? (optional)"
                   className={inputCls}
                 />
                 <Button onClick={submitText} disabled={busy || !text.trim()} className="shrink-0">
@@ -171,9 +171,9 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 {kind === "medication" && (
                   <>
-                    <input className={inputCls} placeholder="Drug name (e.g. sertraline)" onChange={set("name")} />
-                    <input className={inputCls} placeholder="Drug class (e.g. SSRI, MAOI, NSAID)" onChange={set("drug_class")} />
-                    <input className={inputCls} placeholder="Dose (e.g. 50mg daily)" onChange={set("dose")} />
+                    <input className={inputCls} placeholder="Medicine name" onChange={set("name")} />
+                    <input className={inputCls} placeholder="Type of medicine (optional)" onChange={set("drug_class")} />
+                    <input className={inputCls} placeholder="Dose (optional)" onChange={set("dose")} />
                     <select className={inputCls} value={form.status} onChange={set("status")}>
                       <option value="active">active</option>
                       <option value="discontinued">discontinued</option>
@@ -182,7 +182,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 )}
                 {kind === "condition" && (
                   <>
-                    <input className={inputCls} placeholder="Condition (e.g. hypertension)" onChange={set("name")} />
+                    <input className={inputCls} placeholder="Condition name" onChange={set("name")} />
                     <select className={inputCls} value={form.status} onChange={set("status")}>
                       <option value="active">active</option>
                       <option value="resolved">resolved</option>
@@ -191,8 +191,8 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 )}
                 {kind === "allergy" && (
                   <>
-                    <input className={inputCls} placeholder="Substance (e.g. penicillin)" onChange={set("substance")} />
-                    <input className={inputCls} placeholder="Reaction (e.g. hives)" onChange={set("reaction")} />
+                    <input className={inputCls} placeholder="What you're allergic to" onChange={set("substance")} />
+                    <input className={inputCls} placeholder="Reaction (optional)" onChange={set("reaction")} />
                   </>
                 )}
               </div>
