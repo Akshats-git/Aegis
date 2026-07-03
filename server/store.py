@@ -83,32 +83,41 @@ class PatientStore:
         self._save()
 
     # ---- structured (form) add ----
-    def add_manual(self, kind: str, data: dict) -> ClinicalNode:
+    def _build_manual(self, kind: str, data: dict) -> ClinicalNode:
         nid = f"user-{kind}-{uuid.uuid4().hex[:8]}"
         source = data.get("source") or "Added by you"
         if kind == "medication":
-            node: ClinicalNode = Medication(
+            return Medication(
                 id=nid, name=data["name"], drug_class=data.get("drug_class"),
                 dose=data.get("dose"),
                 status=ClinicalStatus(data.get("status", "active")),
                 started=data.get("started"), stopped=data.get("stopped"),
                 reason=data.get("reason"), source=source,
             )
-        elif kind == "condition":
-            node = Condition(
+        if kind == "condition":
+            return Condition(
                 id=nid, name=data["name"],
                 status=ClinicalStatus(data.get("status", "active")),
                 onset=data.get("onset"), resolved=data.get("resolved"), source=source,
             )
-        elif kind == "allergy":
-            node = Allergy(
+        if kind == "allergy":
+            return Allergy(
                 id=nid, substance=data["substance"], reaction=data.get("reaction"),
                 severity=Severity(data.get("severity", "moderate")), source=source,
             )
-        else:
-            raise ValueError(f"unknown kind: {kind}")
+        raise ValueError(f"unknown kind: {kind}")
+
+    def add_manual(self, kind: str, data: dict) -> ClinicalNode:
+        node = self._build_manual(kind, data)
         self.add_fact(node)
         return node
+
+    def add_manual_batch(self, items: list[tuple[str, dict]]) -> list[ClinicalNode]:
+        """Add several medications/conditions/allergies at once, saving to disk once."""
+        nodes = [self._build_manual(kind, data) for kind, data in items]
+        self.facts.extend(nodes)
+        self._save()
+        return nodes
 
     # ---- free-text extraction ----
     def add_from_text(self, text: str, source: str | None = None) -> list[ClinicalNode]:

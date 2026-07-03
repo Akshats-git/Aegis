@@ -257,6 +257,32 @@ def add_manual_record(req: ManualRecord, store: PatientStore = Depends(user_stor
     return {"ok": True, "added": _fact_summary(node)}
 
 
+class ManualBatch(BaseModel):
+    medications: list[dict] = []
+    conditions: list[dict] = []
+    allergies: list[dict] = []
+
+
+@app.post("/api/records/manual/batch")
+def add_manual_batch(req: ManualBatch, store: PatientStore = Depends(user_store)):
+    """Add medications, conditions, and allergies together in one submission.
+
+    Rows missing their required field (medication/condition name, allergy substance)
+    are skipped so the user can leave unused rows blank.
+    """
+    items: list[tuple[str, dict]] = []
+    items += [("medication", m) for m in req.medications if (m.get("name") or "").strip()]
+    items += [("condition", c) for c in req.conditions if (c.get("name") or "").strip()]
+    items += [("allergy", a) for a in req.allergies if (a.get("substance") or "").strip()]
+    if not items:
+        return {"ok": False, "error": "Add at least one medication, condition, or allergy."}
+    try:
+        added = store.add_manual_batch(items)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+    return {"ok": True, "added": [_fact_summary(n) for n in added], "count": len(added)}
+
+
 @app.post("/api/records/clear")
 def clear_records(store: PatientStore = Depends(user_store)):
     store.clear()
