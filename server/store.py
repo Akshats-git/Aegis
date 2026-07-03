@@ -2,11 +2,10 @@
 
 Each signed-in user gets their own profile (an isolated set of clinical facts + source
 documents), persisted to disk so it survives restarts. New profiles start EMPTY — there is
-no preloaded demo patient. Users can optionally load a sample profile to explore the app.
+no preloaded demo patient.
 
   * add_from_text(): paste a clinical note -> an LLM extracts structured facts.
   * add_manual():    add a single medication/condition/allergy via a form.
-  * load_sample():   populate with the demo patient (opt-in).
   * clear():         empty the profile.
 """
 
@@ -21,17 +20,11 @@ from pathlib import Path
 from aegis.schema import (
     Medication, Condition, Allergy, ClinicalStatus, Severity, ClinicalNode,
 )
-from aegis.sample_patient import records
-from aegis.ingest import RECORDS_DIR
 
 DATA_DIR = Path(__file__).resolve().parent / "_userdata"
 DATA_DIR.mkdir(exist_ok=True)
 
 _TYPES = {"Medication": Medication, "Condition": Condition, "Allergy": Allergy}
-
-
-def _demo_documents() -> list[dict]:
-    return [{"name": f.name, "text": f.read_text()} for f in sorted(RECORDS_DIR.glob("*.md"))]
 
 
 def _encode(node: ClinicalNode) -> dict:
@@ -87,11 +80,6 @@ class PatientStore:
     def clear(self) -> None:
         self.facts = []
         self.documents = []
-        self._save()
-
-    def load_sample(self) -> None:
-        self.facts = list(records())
-        self.documents = _demo_documents()
         self._save()
 
     # ---- structured (form) add ----

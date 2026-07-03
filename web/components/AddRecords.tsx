@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FilePlus2, Loader2, Sparkles, FlaskConical, Plus, Check } from "lucide-react";
+import { FilePlus2, Loader2, Sparkles, Plus, Check } from "lucide-react";
 import { api, type FactSummary } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
-
-const SAMPLE_NOTE = `Neurology note, 2026-05-20. Patient reports migraines. Currently taking
-warfarin 5mg daily for atrial fibrillation. Allergic to sulfa drugs (rash).`;
 
 export function AddRecords({ onChange }: { onChange: () => void }) {
   const [tab, setTab] = useState<"paste" | "manual">("paste");
@@ -63,18 +60,6 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     }
   }
 
-  async function loadSample() {
-    setBusy(true);
-    try {
-      await api.loadSample();
-      setExtracted(null);
-      say("Loaded a sample profile so you can explore.");
-      onChange();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -110,9 +95,6 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
             >
               <span className="inline-flex items-center gap-1.5"><Plus className="h-4 w-4" /> Add manually</span>
             </button>
-            <Button tone="ghost" className="ml-auto !px-3 !py-1.5" onClick={loadSample} disabled={busy}>
-              <FlaskConical className="h-3.5 w-3.5" /> Load sample
-            </Button>
           </div>
 
           {tab === "paste" ? (
@@ -134,14 +116,6 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                 <Button onClick={submitText} disabled={busy || !text.trim()} className="shrink-0">
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
                   Extract & add
-                </Button>
-                <Button
-                  tone="ghost"
-                  className="shrink-0"
-                  onClick={() => setText(SAMPLE_NOTE)}
-                  disabled={busy}
-                >
-                  Try sample
                 </Button>
               </div>
               {extracted && (

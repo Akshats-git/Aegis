@@ -98,7 +98,6 @@ export const api = {
   addManual: (kind: string, data: Record<string, unknown>) =>
     post<{ ok: boolean; added?: FactSummary; error?: string }>(
       "/records/manual", { kind, data }),
-  loadSample: () => post<{ ok: boolean; count: number }>("/records/sample", {}),
   clearRecords: () => post<{ ok: boolean; count: number }>("/records/clear", {}),
   timeline: () => get<{ medications: Med[] }>("/timeline"),
   reconcile: () =>

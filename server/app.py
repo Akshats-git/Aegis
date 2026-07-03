@@ -257,12 +257,6 @@ def add_manual_record(req: ManualRecord, store: PatientStore = Depends(user_stor
     return {"ok": True, "added": _fact_summary(node)}
 
 
-@app.post("/api/records/sample")
-def load_sample(store: PatientStore = Depends(user_store)):
-    store.load_sample()
-    return {"ok": True, "count": len(store.all_facts())}
-
-
 @app.post("/api/records/clear")
 def clear_records(store: PatientStore = Depends(user_store)):
     store.clear()
