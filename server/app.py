@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # make LLM_API_KEY etc. available for text extraction and Cognee
 
-from fastapi import FastAPI, Depends, Header
+from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -38,6 +38,37 @@ app.add_middleware(
 
 def user_store(x_user_id: str = Header(default="anonymous")) -> PatientStore:
     return get_store(x_user_id)
+
+
+# ---------- accounts (email + password) ----------
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/api/auth/register")
+def auth_register(req: RegisterRequest):
+    from server.auth import get_user_store, AuthError
+    try:
+        return get_user_store().register(req.email, req.password, req.name)
+    except AuthError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/auth/login")
+def auth_login(req: LoginRequest):
+    from server.auth import get_user_store, AuthError
+    try:
+        return get_user_store().authenticate(req.email, req.password)
+    except AuthError as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
 
 def _reconciled(store: PatientStore):
