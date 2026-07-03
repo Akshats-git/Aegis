@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import { setUserId } from "@/lib/api";
 import { SignIn } from "@/components/SignIn";
 import { Sidebar } from "@/components/Sidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -29,6 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <Sidebar />
       <div className="md:pl-64">
+        {/* Desktop top bar (mobile shows these controls in the Sidebar top bar). */}
+        <header className="sticky top-0 z-20 hidden items-center justify-end gap-2 border-b border-line bg-bg/70 px-8 py-3 backdrop-blur-xl md:flex">
+          <ThemeToggle />
+          <ProfileMenu />
+        </header>
         <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10">{children}</main>
       </div>
     </div>

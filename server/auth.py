@@ -66,6 +66,38 @@ class UserStore:
         self._save()
         return self._public(email)
 
+    def _email_for_id(self, user_id: str) -> str | None:
+        for email, u in self.users.items():
+            if u["id"] == user_id:
+                return email
+        return None
+
+    def update(
+        self,
+        user_id: str,
+        name: str | None = None,
+        current_password: str | None = None,
+        new_password: str | None = None,
+    ) -> dict:
+        email = self._email_for_id(user_id)
+        if not email:
+            raise AuthError("Account not found.")
+        u = self.users[email]
+        if name is not None and name.strip():
+            u["name"] = name.strip()
+        if new_password:
+            if len(new_password) < 8:
+                raise AuthError("New password must be at least 8 characters.")
+            if not hmac.compare_digest(
+                u["password_hash"], _hash_password(current_password or "", u["salt"])
+            ):
+                raise AuthError("Your current password is incorrect.")
+            salt = secrets.token_hex(16)
+            u["salt"] = salt
+            u["password_hash"] = _hash_password(new_password, salt)
+        self._save()
+        return self._public(email)
+
     def authenticate(self, email: str, password: str) -> dict:
         email = (email or "").strip().lower()
         u = self.users.get(email)

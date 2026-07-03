@@ -31,8 +31,12 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) token.uid = (user as { id?: string }).id ?? token.email ?? undefined;
+      // Reflect an edited profile name (pushed via useSession().update({ name })).
+      if (trigger === "update" && typeof (session as { name?: string })?.name === "string") {
+        token.name = (session as { name?: string }).name;
+      }
       return token;
     },
     async session({ session, token }) {

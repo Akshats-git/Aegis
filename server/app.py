@@ -71,6 +71,23 @@ def auth_login(req: LoginRequest):
         raise HTTPException(status_code=401, detail=str(e))
 
 
+class UpdateProfileRequest(BaseModel):
+    name: str | None = None
+    current_password: str | None = None
+    new_password: str | None = None
+
+
+@app.post("/api/auth/update")
+def auth_update(req: UpdateProfileRequest, x_user_id: str = Header(default="")):
+    from server.auth import get_user_store, AuthError
+    try:
+        return get_user_store().update(
+            x_user_id, req.name, req.current_password, req.new_password
+        )
+    except AuthError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 def _reconciled(store: PatientStore):
     """Return (actions, clean_nodes) over the user's profile (instant)."""
     mem = MockMemory()
