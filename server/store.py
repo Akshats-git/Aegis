@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from aegis.schema import (
@@ -56,8 +57,29 @@ class PatientStore:
             blob = json.loads(p.read_text())
             self.facts = [n for n in (_decode(r) for r in blob.get("facts", [])) if n]
             self.documents = blob.get("documents", [])
+            self._migrate_docs()
         except Exception:
             self.facts, self.documents = [], []
+
+    def _migrate_docs(self) -> None:
+        """Backfill id/created/fact_ids on notes saved before per-note ids existed."""
+        changed = False
+        claimed: set[str] = set()
+        for d in self.documents:
+            if "id" not in d:
+                d["id"] = f"note-{uuid.uuid4().hex[:8]}"
+                changed = True
+            if "created" not in d:
+                d["created"] = ""
+                changed = True
+            if "fact_ids" not in d:
+                # legacy facts linked only by source==name; give each fact to one note
+                d["fact_ids"] = [f.id for f in self.facts
+                                 if f.source == d["name"] and f.id not in claimed]
+                changed = True
+            claimed.update(d["fact_ids"])
+        if changed:
+            self._save()
 
     def _save(self) -> None:
         self._path().write_text(json.dumps({
@@ -119,15 +141,66 @@ class PatientStore:
         self._save()
         return nodes
 
-    # ---- free-text extraction ----
+    # ---- free-text notes ----
+    def _default_name(self, source: str | None) -> str:
+        """Use the given name, or a friendly dated default when none is provided."""
+        s = (source or "").strip()
+        if s:
+            return s
+        now = datetime.now()
+        return f"Note · {now.strftime('%b')} {now.day}, {now.year}"
+
+    def _doc_by_id(self, note_id: str) -> dict | None:
+        return next((d for d in self.documents if d.get("id") == note_id), None)
+
     def add_from_text(self, text: str, source: str | None = None) -> list[ClinicalNode]:
-        source = source or "Uploaded note"
-        extracted = extract_facts(text, source)
-        for node in extracted:
-            self.facts.append(node)
-        self.documents.append({"name": source, "text": text})
+        name = self._default_name(source)
+        extracted = extract_facts(text, name)
+        self.facts.extend(extracted)
+        self.documents.append({
+            "id": f"note-{uuid.uuid4().hex[:8]}",
+            "name": name,
+            "text": text,
+            "created": datetime.now(timezone.utc).isoformat(),
+            "fact_ids": [f.id for f in extracted],
+        })
         self._save()
         return extracted
+
+    def update_note(self, note_id: str, text: str) -> list[ClinicalNode]:
+        """Replace a note's text and re-extract only that note's facts."""
+        doc = self._doc_by_id(note_id)
+        if doc is None:
+            raise ValueError("Note not found.")
+        old = set(doc.get("fact_ids", []))
+        self.facts = [f for f in self.facts if f.id not in old]
+        extracted = extract_facts(text, doc["name"])
+        self.facts.extend(extracted)
+        doc["text"] = text
+        doc["fact_ids"] = [f.id for f in extracted]
+        self._save()
+        return extracted
+
+    def delete_note(self, note_id: str) -> None:
+        """Remove a note and only the facts that came from it."""
+        doc = self._doc_by_id(note_id)
+        if doc is None:
+            raise ValueError("Note not found.")
+        remove = set(doc.get("fact_ids", []))
+        self.facts = [f for f in self.facts if f.id not in remove]
+        self.documents.remove(doc)
+        self._save()
+
+    def notes(self) -> list[dict]:
+        """Notes newest-first, each carrying the fact nodes it produced."""
+        by_id = {f.id: f for f in self.facts}
+        out = [{
+            "id": d["id"], "name": d["name"], "text": d["text"],
+            "created": d.get("created", ""),
+            "nodes": [by_id[fid] for fid in d.get("fact_ids", []) if fid in by_id],
+        } for d in self.documents]
+        out.sort(key=lambda n: n["created"], reverse=True)
+        return out
 
 
 # ---- per-user registry ----
@@ -158,6 +231,9 @@ _SCHEMA_HINT = f"""Return ONLY JSON with this shape:
                     "severity": "mild"|"moderate"|"severe"|"life-threatening"}}]
 }}
 For drug_class, prefer one of: {", ".join(KNOWN_CLASSES)} (use the closest match).
+For "dose", capture the amount AND/OR how often it is taken exactly as written — e.g.
+"500mg twice daily", "2 times a day", "once at night". If only a frequency is given, use
+that as the dose.
 Use ISO dates (YYYY-MM-DD) when present. Omit fields you cannot find (use null)."""
 
 

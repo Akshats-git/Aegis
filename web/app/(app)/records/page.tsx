@@ -1,17 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { api, type SourceDoc } from "@/lib/api";
+import { api, type Note } from "@/lib/api";
 import { AddRecords } from "@/components/AddRecords";
 import { SourceDocs } from "@/components/SourceDocs";
 
 export default function RecordsPage() {
-  const [docs, setDocs] = useState<SourceDoc[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   const load = useCallback(async () => {
     try {
-      const p = await api.patient();
-      setDocs(p.documents);
+      const r = await api.notes();
+      setNotes(r.notes);
     } catch {
       /* ignore */
     }
@@ -24,7 +24,7 @@ export default function RecordsPage() {
   return (
     <div className="space-y-16">
       <AddRecords onChange={load} />
-      {docs.length > 0 && <SourceDocs docs={docs} />}
+      {notes.length > 0 && <SourceDocs notes={notes} onChange={load} />}
     </div>
   );
 }

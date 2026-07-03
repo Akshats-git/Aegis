@@ -213,14 +213,18 @@ def erase(store: PatientStore = Depends(user_store)):
 
 def _fact_summary(n) -> dict:
     if isinstance(n, Medication):
-        return {"kind": "medication", "label": f"{n.name} [{n.drug_class}]",
+        detail = " · ".join(b for b in (n.drug_class, n.dose) if b)
+        return {"kind": "medication", "label": n.name, "detail": detail,
+                "drug_class": n.drug_class, "dose": n.dose,
                 "status": n.status.value, "source": n.source}
     if isinstance(n, Condition):
-        return {"kind": "condition", "label": n.name, "status": n.status.value, "source": n.source}
+        return {"kind": "condition", "label": n.name, "detail": "",
+                "status": n.status.value, "source": n.source}
     if isinstance(n, Allergy):
-        return {"kind": "allergy", "label": n.substance, "status": "allergy", "source": n.source}
+        return {"kind": "allergy", "label": n.substance, "detail": n.reaction or "",
+                "status": "allergy", "source": n.source}
     return {"kind": type(n).__name__.lower(), "label": getattr(n, "name", "?"),
-            "status": "", "source": getattr(n, "source", "")}
+            "detail": "", "status": "", "source": getattr(n, "source", "")}
 
 
 @app.get("/api/records")
@@ -281,6 +285,43 @@ def add_manual_batch(req: ManualBatch, store: PatientStore = Depends(user_store)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
     return {"ok": True, "added": [_fact_summary(n) for n in added], "count": len(added)}
+
+
+@app.get("/api/notes")
+def get_notes(store: PatientStore = Depends(user_store)):
+    """Notes newest-first, each with its extracted facts (grouped by note id)."""
+    return {"notes": [
+        {"id": n["id"], "name": n["name"], "text": n["text"], "created": n["created"],
+         "facts": [_fact_summary(f) for f in n["nodes"]]}
+        for n in store.notes()
+    ]}
+
+
+class NoteUpdate(BaseModel):
+    id: str
+    text: str
+
+
+@app.post("/api/records/note/update")
+def update_note(req: NoteUpdate, store: PatientStore = Depends(user_store)):
+    try:
+        added = store.update_note(req.id, req.text)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+    return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
+
+
+class NoteDelete(BaseModel):
+    id: str
+
+
+@app.post("/api/records/note/delete")
+def delete_note(req: NoteDelete, store: PatientStore = Depends(user_store)):
+    try:
+        store.delete_note(req.id)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+    return {"ok": True}
 
 
 @app.post("/api/records/clear")

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FilePlus2, Loader2, Sparkles, Plus, Check, X } from "lucide-react";
-import { api, type FactSummary } from "@/lib/api";
-import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
+import { api } from "@/lib/api";
+import { Card, Reveal, SectionTitle, Button } from "./ui";
 
 type MedRow = { name: string; drug_class: string; dose: string };
 type CondRow = { name: string };
@@ -25,7 +25,6 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
   // paste
   const [text, setText] = useState("");
   const [source, setSource] = useState("");
-  const [extracted, setExtracted] = useState<FactSummary[] | null>(null);
 
   // manual — fill medications, conditions and allergies together, like a real report
   const [meds, setMeds] = useState<MedRow[]>([emptyMed()]);
@@ -40,13 +39,12 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
   async function submitText() {
     if (!text.trim()) return;
     setBusy(true);
-    setExtracted(null);
     try {
       const r = await api.addText(text, source || undefined);
       if (r.ok) {
-        setExtracted(r.extracted ?? []);
-        say(`Extracted ${r.count} fact(s) and added to the record.`);
+        say(`Added ${r.count} fact(s). See it below under “Every record, together.”`);
         setText("");
+        setSource("");
         onChange();
       } else {
         say(r.error ?? "Extraction failed.");
@@ -137,14 +135,6 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                   Extract & add
                 </Button>
               </div>
-              {extracted && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {extracted.length === 0 && <span className="text-sm text-muted">No facts found.</span>}
-                  {extracted.map((f, i) => (
-                    <Badge key={i} tone="rose">{f.kind}: {f.label}</Badge>
-                  ))}
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-6">

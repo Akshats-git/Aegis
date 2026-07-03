@@ -57,7 +57,25 @@ export type RecallResult = {
   engine: string;
 };
 
-export type FactSummary = { kind: string; label: string; status: string; source: string };
+export type FactSummary = {
+  kind: string;
+  label: string;
+  detail?: string; // meds: "drug_class · dose"; allergies: reaction
+  drug_class?: string | null; // medications only
+  dose?: string | null; // medications only
+  status: string;
+  source: string;
+};
+
+// A pasted note plus the facts extracted from it. Each note has its own id + timestamp,
+// so two notes with the same name never merge.
+export type Note = {
+  id: string;
+  name: string;
+  text: string;
+  created: string; // ISO timestamp
+  facts: FactSummary[];
+};
 
 // The signed-in user's id, set after auth and sent on every request so the backend serves
 // that user's isolated profile.
@@ -105,6 +123,12 @@ export const api = {
   }) =>
     post<{ ok: boolean; added?: FactSummary[]; count?: number; error?: string }>(
       "/records/manual/batch", body),
+  notes: () => get<{ notes: Note[] }>("/notes"),
+  updateNote: (id: string, text: string) =>
+    post<{ ok: boolean; extracted?: FactSummary[]; count?: number; error?: string }>(
+      "/records/note/update", { id, text }),
+  deleteNote: (id: string) =>
+    post<{ ok: boolean; error?: string }>("/records/note/delete", { id }),
   clearRecords: () => post<{ ok: boolean; count: number }>("/records/clear", {}),
   timeline: () => get<{ medications: Med[] }>("/timeline"),
   reconcile: () =>
