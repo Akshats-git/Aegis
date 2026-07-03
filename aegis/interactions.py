@@ -30,8 +30,14 @@ class Interaction:
     source: str = FDA
 
     def matches(self, ca: str, cb: str) -> bool:
-        pair = {self.class_a.lower(), self.class_b.lower()}
-        return pair == {ca.lower(), cb.lower()}
+        pair = {_norm_class(self.class_a), _norm_class(self.class_b)}
+        return pair == {_norm_class(ca), _norm_class(cb)}
+
+
+def _norm_class(c: str) -> str:
+    """Normalize a drug-class label so 'triptans'/'Triptan'/'MAOIs' all match the KB."""
+    c = (c or "").strip().lower()
+    return c[:-1] if len(c) > 3 and c.endswith("s") else c
 
 
 # --- Open interaction knowledge base (class-level) ---

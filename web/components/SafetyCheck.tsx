@@ -2,35 +2,42 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShieldAlert, ShieldCheck, Loader2, Stethoscope, FileWarning } from "lucide-react";
-import { api, type Candidate, type SafetyResult } from "@/lib/api";
+import { ShieldAlert, ShieldCheck, AlertTriangle, Loader2, Search, Pill } from "lucide-react";
+import { api, type Candidate, type SafetyResult, type Concern } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
 
-export function SafetyCheck({
-  candidates,
-  initial,
-}: {
-  candidates: Candidate[];
-  initial?: Candidate;
-}) {
-  const [selected, setSelected] = useState<Candidate>(initial ?? candidates[0]);
+function sevTone(s: Concern["severity"]): "danger" | "warn" | "muted" {
+  if (s === "life-threatening" || s === "severe") return "danger";
+  if (s === "moderate") return "warn";
+  return "muted";
+}
+
+const VERDICT = {
+  block: { label: "Not safe", icon: ShieldAlert, text: "text-danger", border: "border-danger/50 bg-danger/10" },
+  caution: { label: "Use caution", icon: AlertTriangle, text: "text-warn", border: "border-warn/50 bg-warn/10" },
+  ok: { label: "Looks safe", icon: ShieldCheck, text: "text-rose", border: "border-rose/50 bg-rose/10" },
+} as const;
+
+export function SafetyCheck({ candidates }: { candidates: Candidate[] }) {
+  const [name, setName] = useState("");
   const [result, setResult] = useState<SafetyResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function run(c: Candidate) {
-    setSelected(c);
+  async function run(medicine: string) {
+    const q = medicine.trim();
+    if (!q) return;
+    setName(q);
     setLoading(true);
     setResult(null);
     try {
-      // small delay so the "checking" state reads on stage
-      await new Promise((r) => setTimeout(r, 450));
-      setResult(await api.safetyCheck(c.name, c.drug_class, c.indication));
+      setResult(await api.safetyCheck(q));
     } finally {
       setLoading(false);
     }
   }
 
-  const block = result?.verdict === "block";
+  const v = result ? VERDICT[result.verdict] : null;
+  const ctx = result?.checked_against;
 
   return (
     <section>
@@ -38,7 +45,7 @@ export function SafetyCheck({
         <SectionTitle
           eyebrow="Peace of mind"
           title="Check a new medicine before you take it"
-          desc="A doctor suggested something new? Check it here first. Aegis compares it against your current medicines and warns you if it isn't safe."
+          desc="Type any medicine a doctor is considering. Aegis checks it against everything on your record — your current medicines, conditions and allergies — and flags anything unsafe."
         />
       </Reveal>
 
@@ -46,39 +53,44 @@ export function SafetyCheck({
         <Reveal>
           <Card>
             <div className="mb-3 flex items-center gap-2">
-              <Stethoscope className="h-4 w-4 text-rose" />
-              <span className="label">Pick a medicine to check</span>
+              <Pill className="h-4 w-4 text-rose" />
+              <span className="label">Medicine to check</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {candidates.map((c) => (
-                <button
-                  key={c.name}
-                  onClick={() => run(c)}
-                  className={`rounded-xl border px-3 py-2 text-left text-sm transition-all ${
-                    selected.name === c.name
-                      ? "border-rose/50 bg-rose/10"
-                      : "border-line bg-white/5 hover:bg-white/10"
-                  }`}
-                >
-                  <div className="font-medium capitalize">{c.name}</div>
-                  <div className="text-xs text-muted">for {c.indication}</div>
-                </button>
-              ))}
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-black/20 px-3">
+              <Search className="h-4 w-4 shrink-0 text-muted" />
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && run(name)}
+                placeholder="Type a medicine name"
+                className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted"
+              />
             </div>
-            <Button className="mt-5 w-full" onClick={() => run(selected)} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Checking…
-                </>
-              ) : (
-                <>Run safety check</>
-              )}
+            <Button className="mt-3 w-full" onClick={() => run(name)} disabled={loading || !name.trim()}>
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Checking</> : "Check safety"}
             </Button>
+
+            {candidates.length > 0 && (
+              <div className="mt-5">
+                <div className="label mb-2">Common examples</div>
+                <div className="flex flex-wrap gap-2">
+                  {candidates.map((c) => (
+                    <button
+                      key={c.name}
+                      onClick={() => run(c.name)}
+                      className="chip capitalize text-muted transition-colors hover:border-rose/40 hover:text-ink"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </Card>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="min-h-[220px]">
+          <div className="min-h-[240px]">
             <AnimatePresence mode="wait">
               {loading && (
                 <motion.div
@@ -86,65 +98,68 @@ export function SafetyCheck({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="grid h-full min-h-[220px] place-items-center rounded-2xl border border-line bg-panel"
+                  className="grid h-full min-h-[240px] place-items-center rounded-2xl border border-line bg-panel"
                 >
                   <div className="flex items-center gap-2 text-muted">
-                    <Loader2 className="h-4 w-4 animate-spin" /> analyzing current record…
+                    <Loader2 className="h-4 w-4 animate-spin" /> checking against your full record…
                   </div>
                 </motion.div>
               )}
 
-              {!loading && result && (
+              {!loading && result && v && (
                 <motion.div
                   key={result.proposed.name + result.verdict}
-                  initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                  initial={{ opacity: 0, scale: 0.97, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className={`overflow-hidden rounded-2xl border p-6 ${
-                    block
-                      ? "border-danger/50 bg-danger/10"
-                      : "border-rose/50 bg-rose/10"
-                  }`}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className={`rounded-2xl border p-6 ${v.border}`}
                 >
                   <div className="flex items-center gap-3">
-                    {block ? (
-                      <ShieldAlert className="h-8 w-8 text-danger" />
-                    ) : (
-                      <ShieldCheck className="h-8 w-8 text-rose" />
-                    )}
+                    <v.icon className={`h-8 w-8 ${v.text}`} />
                     <div>
-                      <div className={`text-xl font-bold ${block ? "text-danger" : "text-rose"}`}>
-                        {block ? "Not safe for you" : "Looks safe"}
-                      </div>
-                      <div className="text-sm capitalize text-muted">
-                        {result.proposed.name}
-                      </div>
+                      <div className={`text-xl font-bold ${v.text}`}>{v.label}</div>
+                      <div className="text-sm capitalize text-muted">{result.proposed.name}</div>
                     </div>
                   </div>
 
-                  {result.alerts.map((a, i) => (
-                    <div key={i} className="mt-5 space-y-2 border-t border-line pt-4">
-                      <div className="flex items-center gap-2 text-danger">
-                        <FileWarning className="h-4 w-4" />
-                        <span className="font-semibold">Risk: {a.effect}</span>
-                      </div>
-                      <div className="text-sm text-muted">
-                        It can react badly with{" "}
-                        <span className="font-medium text-ink">{a.conflicting_drug}</span>,
-                        which you&apos;re currently taking.
-                      </div>
-                      <div className="rounded-lg border border-line bg-black/20 p-3 text-xs text-muted">
-                        {a.management}
-                      </div>
-                      <div className="pt-1 text-xs text-muted">
-                        Based on your record from{" "}
-                        <span className="text-ink">{a.patient_source}</span>.
-                      </div>
+                  {ctx && (
+                    <div className="mt-3 text-xs text-muted">
+                      Checked against {ctx.medications} current medication
+                      {ctx.medications === 1 ? "" : "s"}, {ctx.conditions} condition
+                      {ctx.conditions === 1 ? "" : "s"} and {ctx.allergies} allerg
+                      {ctx.allergies === 1 ? "y" : "ies"}.
                     </div>
-                  ))}
+                  )}
 
-                  {block && result.alternatives.length > 0 && (
+                  {result.concerns.length === 0 ? (
+                    <p className="mt-5 border-t border-line pt-4 text-sm text-muted">
+                      No interactions found with anything currently on your record. Always
+                      confirm with your doctor or pharmacist.
+                    </p>
+                  ) : (
+                    <div className="mt-5 space-y-3 border-t border-line pt-4">
+                      {result.concerns.map((c, i) => (
+                        <div key={i} className="rounded-xl border border-line bg-black/20 p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge tone={sevTone(c.severity)}>{c.severity}</Badge>
+                            <span className="font-medium">{c.title}</span>
+                            <span className="ml-auto text-[11px] uppercase tracking-wide text-muted">
+                              {c.source === "reference" ? "Known contraindication" : "AI-assessed"}
+                            </span>
+                          </div>
+                          {c.detail && <p className="mt-2 text-sm text-muted">{c.detail}</p>}
+                          {c.related_to && (
+                            <p className="mt-1 text-xs text-muted">
+                              Related to: <span className="text-ink">{c.related_to}</span>
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {result.alternatives.length > 0 && (
                     <div className="mt-4 border-t border-line pt-4">
                       <div className="mb-2 text-sm font-semibold text-rose">
                         Safer options to ask your doctor about
@@ -164,9 +179,9 @@ export function SafetyCheck({
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="grid h-full min-h-[220px] place-items-center rounded-2xl border border-dashed border-line text-sm text-muted"
+                  className="grid h-full min-h-[240px] place-items-center rounded-2xl border border-dashed border-line px-6 text-center text-sm text-muted"
                 >
-                  Select a drug and run the check.
+                  Type a medicine name and run a check to see if it&apos;s safe with your record.
                 </motion.div>
               )}
             </AnimatePresence>

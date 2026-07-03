@@ -110,28 +110,14 @@ def get_candidates():
 
 class SafetyRequest(BaseModel):
     name: str
-    drug_class: str
-    indication: str | None = "migraine"
+    drug_class: str | None = None
+    indication: str | None = None
 
 
 @app.post("/api/safety-check")
 def safety_check(req: SafetyRequest, store: PatientStore = Depends(user_store)):
-    (_, clean), _ = _reconciled(store)
-    current = current_medications(clean)
-    allergies = [n for n in clean if isinstance(n, Allergy)]
-    alerts = check(req.name, req.drug_class, current, allergies)
-    blocking = any(a.is_blocking for a in alerts)
-    return {
-        "proposed": {"name": req.name, "drug_class": req.drug_class},
-        "verdict": "block" if blocking else "ok",
-        "alerts": [{
-            "severity": a.severity.value, "effect": a.effect,
-            "proposed_drug": a.proposed_drug, "conflicting_drug": a.conflicting_drug,
-            "mechanism": a.mechanism, "management": a.management,
-            "patient_source": a.patient_source, "evidence_source": a.evidence_source,
-        } for a in alerts],
-        "alternatives": suggest_alternatives(req.indication or "migraine") if blocking else [],
-    }
+    from server.safety import assess
+    return assess(store, req.name, req.indication)
 
 
 # ---------- recall / erase ----------

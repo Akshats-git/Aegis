@@ -25,22 +25,20 @@ export type ReconcileAction = {
   reason: string;
 };
 
-export type Alert = {
-  severity: string;
-  effect: string;
-  proposed_drug: string;
-  conflicting_drug: string;
-  mechanism: string;
-  management: string;
-  patient_source: string;
-  evidence_source: string;
+export type Concern = {
+  severity: "life-threatening" | "severe" | "moderate" | "mild";
+  title: string;
+  detail: string;
+  related_to: string;
+  source: "reference" | "ai";
 };
 
 export type SafetyResult = {
   proposed: { name: string; drug_class: string };
-  verdict: "block" | "ok";
-  alerts: Alert[];
+  verdict: "block" | "caution" | "ok";
+  concerns: Concern[];
   alternatives: string[];
+  checked_against?: { medications: number; conditions: number; allergies: number };
 };
 
 export type Candidate = { name: string; drug_class: string; indication: string };
@@ -108,8 +106,8 @@ export const api = {
   handoff: () => get<Handoff>("/handoff"),
   candidates: () =>
     get<{ candidates: Candidate[]; default: Candidate }>("/candidates"),
-  safetyCheck: (name: string, drug_class: string, indication?: string) =>
-    post<SafetyResult>("/safety-check", { name, drug_class, indication }),
+  safetyCheck: (name: string, indication?: string) =>
+    post<SafetyResult>("/safety-check", { name, indication }),
   recall: (query: string) => post<RecallResult>("/recall", { query }),
   erase: () => post<{ status: string }>("/erase", {}),
 };

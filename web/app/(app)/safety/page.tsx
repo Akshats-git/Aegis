@@ -8,14 +8,12 @@ import { EmptyState, PageLoader } from "@/components/EmptyState";
 export default function SafetyPage() {
   const [loading, setLoading] = useState(true);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [def, setDef] = useState<Candidate | undefined>();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     (async () => {
       const [c, recs] = await Promise.all([api.candidates(), api.records()]);
       setCandidates(c.candidates);
-      setDef(c.default);
       setCount(recs.count);
     })().finally(() => setLoading(false));
   }, []);
@@ -28,5 +26,5 @@ export default function SafetyPage() {
         desc="Once your medicines are on file, you can check whether a new medicine is safe for you."
       />
     );
-  return <SafetyCheck candidates={candidates} initial={def} />;
+  return <SafetyCheck candidates={candidates} />;
 }
