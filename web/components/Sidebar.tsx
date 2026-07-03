@@ -9,6 +9,7 @@ import {
   ShieldPlus, LayoutDashboard, FolderHeart, Pill, ShieldCheck,
   ClipboardList, MessageCircle, Lock, LogOut, Menu, X,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
@@ -41,7 +42,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             href={href}
             onClick={onNavigate}
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              active ? "bg-rose/10 text-rose" : "text-muted hover:bg-white/5 hover:text-ink"
+              active ? "bg-rose/10 text-rose" : "text-muted hover:bg-field hover:text-ink"
             }`}
           >
             <Icon className="h-[18px] w-[18px]" />
@@ -74,7 +75,7 @@ function Profile() {
       </div>
       <button
         onClick={() => signOut()}
-        className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition-colors hover:bg-white/5 hover:text-danger"
+        className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition-colors hover:bg-field hover:text-danger"
       >
         <LogOut className="h-4 w-4" /> Sign out
       </button>
@@ -98,9 +99,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-black/20 p-4 backdrop-blur-xl md:flex">
-        <div className="px-1 pb-6 pt-2">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-panel p-4 backdrop-blur-xl md:flex">
+        <div className="flex items-center justify-between px-1 pb-6 pt-2">
           <Logo />
+          <ThemeToggle />
         </div>
         <NavLinks />
         <div className="mt-auto">
@@ -111,12 +113,15 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/80 px-4 py-3 backdrop-blur-xl md:hidden">
         <Logo />
-        <button
-          onClick={() => setOpen(true)}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-line"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => setOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-line"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}

@@ -116,7 +116,7 @@ export default function Overview() {
                   {meds.map((m) => (
                     <div
                       key={m.name}
-                      className="flex items-center gap-3 rounded-xl border border-line bg-black/20 px-4 py-3"
+                      className="flex items-center gap-3 rounded-xl border border-line bg-field px-4 py-3"
                     >
                       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose/10">
                         <Pill className="h-4 w-4 text-rose" />
@@ -140,7 +140,7 @@ export default function Overview() {
                   <Link
                     key={href}
                     href={href}
-                    className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-white/5"
+                    className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-field"
                   >
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose/10">
                       <Icon className="h-4 w-4 text-rose" />

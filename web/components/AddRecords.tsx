@@ -79,7 +79,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-black/20 px-3 py-2 text-sm outline-none focus:border-rose/50";
+    "w-full rounded-lg border border-line bg-field px-3 py-2 text-sm outline-none focus:border-rose/50";
 
   return (
     <section>

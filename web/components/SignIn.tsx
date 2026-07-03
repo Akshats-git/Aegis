@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { ShieldPlus, FolderHeart, ShieldCheck, Lock, Loader2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FEATURES = [
   { icon: FolderHeart, text: "Every record kept in one place." },
@@ -55,7 +56,10 @@ export function SignIn() {
   const isSignup = mode === "signup";
 
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
+    <main className="relative grid min-h-screen place-items-center px-5 py-10">
+      <div className="absolute right-5 top-5">
+        <ThemeToggle />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,7 +144,7 @@ export function SignIn() {
           <div className="mt-8 space-y-3 border-t border-line pt-6">
             {FEATURES.map((f) => (
               <div key={f.text} className="flex items-center gap-3 text-sm text-muted">
-                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-field">
                   <f.icon className="h-4 w-4 text-rose" />
                 </div>
                 <span>{f.text}</span>
@@ -174,7 +178,7 @@ function Field({
         {...props}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-line bg-white/5 px-3.5 py-3 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:border-rose/50"
+        className="w-full rounded-xl border border-line bg-field px-3.5 py-3 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:border-rose/50"
       />
     </label>
   );

@@ -87,7 +87,7 @@ export function Button({
 }) {
   const tones: Record<string, string> = {
     primary: "bg-rose text-black hover:bg-rose/90",
-    ghost: "border border-line bg-white/5 text-ink hover:bg-white/10",
+    ghost: "border border-line bg-field text-ink hover:bg-line",
     danger: "border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20",
   };
   return (

@@ -2,8 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light theme (default). The .dark class on <html> swaps to the dark palette. */
 :root {
+  color-scheme: light;
+  --bg: 247 248 251;
+  --ink: 17 24 39;
+  --muted: 90 100 122;
+  --rose: 225 29 72;
+  --danger: 220 38 38;
+  --warn: 180 121 4;
+  --panel: 255 255 255;
+  --panel-a: 0.72;
+  --line: 17 24 39;
+  --line-a: 0.1;
+  --field: 17 24 39;
+  --field-a: 0.04;
+  --grid: 17 24 39;
+  --grid-a: 0.04;
+  --card-shadow: 0 12px 30px -14px rgba(17, 24, 39, 0.16);
+}
+
+.dark {
   color-scheme: dark;
+  --bg: 6 7 10;
+  --ink: 231 236 243;
+  --muted: 139 149 167;
+  --rose: 251 113 133;
+  --danger: 225 29 72;
+  --warn: 245 181 68;
+  --panel: 255 255 255;
+  --panel-a: 0.05;
+  --line: 255 255 255;
+  --line-a: 0.12;
+  --field: 255 255 255;
+  --field-a: 0.04;
+  --grid: 255 255 255;
+  --grid-a: 0.035;
+  --card-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 html {
@@ -12,8 +47,8 @@ html {
 }
 
 body {
-  background-color: #06070a;
-  color: #e7ecf3;
+  background-color: rgb(var(--bg));
+  color: rgb(var(--ink));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -25,26 +60,23 @@ body {
   background:
     radial-gradient(60rem 40rem at 70% -10%, rgba(251, 113, 133, 0.12), transparent 60%),
     radial-gradient(50rem 40rem at 10% 10%, rgba(225, 29, 72, 0.08), transparent 55%),
-    #06070a;
+    rgb(var(--bg));
 }
 .app-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgb(var(--grid) / var(--grid-a)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--grid) / var(--grid-a)) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at 50% 0%, black, transparent 75%);
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border bg-panel backdrop-blur-xl;
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow:
-      0 12px 30px -14px rgba(0, 0, 0, 0.7),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    @apply rounded-2xl border border-line bg-panel backdrop-blur-xl;
+    box-shadow: var(--card-shadow);
   }
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs font-medium;
@@ -65,5 +97,5 @@ body {
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--muted) / 0.35); border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }

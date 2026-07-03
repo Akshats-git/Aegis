@@ -43,7 +43,7 @@ export function SourceDocs({ docs }: { docs: SourceDoc[] }) {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-black/30 p-3 font-mono text-[11px] leading-relaxed text-muted"
+                    className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-field p-3 font-mono text-[11px] leading-relaxed text-muted"
                   >
                     {d.text}
                   </motion.pre>

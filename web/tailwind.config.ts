@@ -8,14 +8,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#06070a",
-        panel: "rgba(255,255,255,0.05)",
-        line: "rgba(255,255,255,0.12)",
-        ink: "#e7ecf3",
-        muted: "#8b95a7",
-        rose: "#fb7185",
-        danger: "#e11d48",
-        warn: "#f5b544",
+        // Semantic tokens backed by CSS variables so they swap with the theme
+        // (light values in :root, dark values under .dark — see globals.css).
+        bg: "rgb(var(--bg) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        rose: "rgb(var(--rose) / <alpha-value>)",
+        danger: "rgb(var(--danger) / <alpha-value>)",
+        warn: "rgb(var(--warn) / <alpha-value>)",
+        panel: "rgb(var(--panel) / var(--panel-a))",
+        line: "rgb(var(--line) / var(--line-a))",
+        field: "rgb(var(--field) / var(--field-a))",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],

@@ -39,7 +39,7 @@ export function AskRecord() {
       <Reveal>
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-black/20 px-3">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-field px-3">
               <Search className="h-4 w-4 text-muted" />
               <input
                 value={q}
@@ -81,7 +81,7 @@ export function AskRecord() {
                 <div className="mt-4 space-y-2">
                   <div className="label">Based on your records</div>
                   {res.evidence.map((e, i) => (
-                    <div key={i} className="rounded-lg border border-line bg-black/20 p-3 text-xs">
+                    <div key={i} className="rounded-lg border border-line bg-field p-3 text-xs">
                       <div className="text-muted">{e.text}</div>
                       <div className="mt-1 text-rose">From: {e.source}</div>
                     </div>

@@ -56,7 +56,7 @@ export function SafetyCheck({ candidates }: { candidates: Candidate[] }) {
               <Pill className="h-4 w-4 text-rose" />
               <span className="label">Medicine to check</span>
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-line bg-black/20 px-3">
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-field px-3">
               <Search className="h-4 w-4 shrink-0 text-muted" />
               <input
                 value={name}
@@ -140,7 +140,7 @@ export function SafetyCheck({ candidates }: { candidates: Candidate[] }) {
                   ) : (
                     <div className="mt-5 space-y-3 border-t border-line pt-4">
                       {result.concerns.map((c, i) => (
-                        <div key={i} className="rounded-xl border border-line bg-black/20 p-4">
+                        <div key={i} className="rounded-xl border border-line bg-field p-4">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge tone={sevTone(c.severity)}>{c.severity}</Badge>
                             <span className="font-medium">{c.title}</span>
