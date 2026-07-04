@@ -32,7 +32,7 @@ export function Card({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("card p-5", className)}>{children}</div>;
+  return <div className={cn("card p-6", className)}>{children}</div>;
 }
 
 export function SectionTitle({
@@ -45,10 +45,10 @@ export function SectionTitle({
   desc?: string;
 }) {
   return (
-    <div className="mb-5">
+    <div className="mb-6">
       <div className="label text-rose">{eyebrow}</div>
-      <h2 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h2>
-      {desc && <p className="mt-1 max-w-2xl text-sm text-muted">{desc}</p>}
+      <h2 className="mt-1.5 text-3xl font-semibold tracking-tight">{title}</h2>
+      {desc && <p className="mt-2 max-w-3xl text-base text-muted">{desc}</p>}
     </div>
   );
 }

@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <ThemeToggle />
           <ProfileMenu />
         </header>
-        <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10">{children}</main>
+        <main className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">{children}</main>
       </div>
     </div>
   );

@@ -42,8 +42,8 @@
 }
 
 html {
-  /* Scale the whole UI up slightly (all rem-based sizes grow proportionally). */
-  font-size: 17px;
+  /* Scale the whole UI up (all rem-based sizes grow proportionally). */
+  font-size: 18px;
 }
 
 body {
