@@ -141,12 +141,13 @@ def get_reconcile(store: PatientStore = Depends(user_store)):
 @app.get("/api/handoff")
 def get_handoff(store: PatientStore = Depends(user_store)):
     (_, clean), _ = _reconciled(store)
-    conditions = [n.name for n in clean if isinstance(n, Condition) and n.status == ClinicalStatus.ACTIVE]
-    meds = [{"name": m.name, "dose": m.dose, "drug_class": m.drug_class}
+    conditions = [{"name": n.name, "onset": n.onset}
+                  for n in clean if isinstance(n, Condition) and n.status == ClinicalStatus.ACTIVE]
+    meds = [{"name": m.name, "dose": m.dose, "drug_class": m.drug_class, "started": m.started}
             for m in current_medications(clean)]
-    allergies = [{"substance": a.substance, "reaction": a.reaction}
+    allergies = [{"substance": a.substance, "reaction": a.reaction, "severity": a.severity.value}
                  for a in clean if isinstance(a, Allergy)]
-    discontinued = [{"name": n.name, "stopped": n.stopped}
+    discontinued = [{"name": n.name, "stopped": n.stopped, "reason": n.reason}
                     for n in clean if isinstance(n, Medication) and n.status == ClinicalStatus.DISCONTINUED]
     return {"conditions": conditions, "medications": meds, "allergies": allergies,
             "discontinued": discontinued, "text": handoff_summary(clean) if clean else ""}

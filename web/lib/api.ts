@@ -44,10 +44,10 @@ export type SafetyResult = {
 export type Candidate = { name: string; drug_class: string; indication: string };
 
 export type Handoff = {
-  conditions: string[];
-  medications: { name: string; dose: string | null; drug_class: string | null }[];
-  allergies: { substance: string; reaction: string | null }[];
-  discontinued: { name: string; stopped: string | null }[];
+  conditions: { name: string; onset: string | null }[];
+  medications: { name: string; dose: string | null; drug_class: string | null; started: string | null }[];
+  allergies: { substance: string; reaction: string | null; severity: string }[];
+  discontinued: { name: string; stopped: string | null; reason: string | null }[];
   text: string;
 };
 
