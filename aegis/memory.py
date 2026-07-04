@@ -1,14 +1,22 @@
 """AegisMemory — the four memory verbs over the patient's clinical graph.
 
 `MockMemory` is an in-memory version so tests/demos run with no keys.
-`CogneeMemory` is the real backend (validated end-to-end in earlier work): each verb maps
-to a real Cognee call, and each forgettable fact lives in its own dataset so forget()
-can retire exactly one fact while recall still reasons across the whole graph.
+`CogneeMemory` is the real backend, validated end-to-end against cognee 1.2.2.
+
+Single-tenant by design: one shared dataset holds the record this instance manages. This
+isn't a shortcut — `cognee.prune.prune_data()`/`prune_system()` (what real erasure needs,
+since single-item forget() doesn't purge the graph in this version — see `forget()` below)
+are global operations with no dataset or user scope in this Cognee version, so a single
+process genuinely cannot host multiple independent tenants safely. Aegis is built to be
+self-hosted per person anyway — you run your own instance for your own record, the same
+way you'd run your own password manager — so single-tenant is the right model, not a
+limitation.
 """
 
 from __future__ import annotations
 
 import os
+import re
 from typing import Iterable, Protocol
 
 from .schema import ClinicalNode, ClinicalStatus, Medication, Condition, Allergy
@@ -95,28 +103,23 @@ class MockMemory:
 
 
 class CogneeMemory:
-    """Real backend, wired against the cognee 1.2 async API (validated in prior work).
+    """Real backend, wired against the cognee 1.2 async API.
 
-    Each user gets their own dataset (``aegis_<hash>``) so recall/forget are scoped to that
-    user's records. Pass a ``user_id`` for the multi-user web app; omit it for the single
-    demo dataset.
+    One fixed, shared dataset (``aegis_patient``) — see the module docstring for why this
+    is single-tenant by design, not a shortcut.
     """
 
-    def __init__(self, user_id: str | None = None) -> None:
+    DATASET = "aegis_patient"
+
+    def __init__(self) -> None:
         import asyncio
         import cognee
-        import hashlib
         from cognee.modules.search.types import SearchType
 
         self._cognee = cognee
         self._SearchType = SearchType
         self._run = asyncio.run
-        if user_id:
-            h = hashlib.sha256(user_id.encode()).hexdigest()[:16]
-            self.DATASET = f"aegis_{h}"
-        else:
-            self.DATASET = "aegis_patient"
-        # node.id -> cognee data_id (for single-fact forget within one connected dataset)
+        # node.id -> cognee data_id (for single-fact forget within the connected dataset)
         self._data_ids: dict[str, str] = {}
 
     def remember(self, node: ClinicalNode) -> None:
@@ -130,7 +133,10 @@ class CogneeMemory:
         self._run(self._cognee.remember(
             text, dataset_name=self.DATASET, self_improvement=False))
 
-    def recall(self, query: str):
+    def recall(self, query: str, *, system_prompt: str | None = None):
+        """Graph-grounded, cited answer. ``system_prompt`` overrides the default answer
+        style — used by the safety check to ask for a structured JSON assessment instead
+        of a prose answer, while still reasoning over the same live graph."""
         try:
             return self._run(
                 self._cognee.recall(
@@ -138,6 +144,7 @@ class CogneeMemory:
                     query_type=self._SearchType.GRAPH_COMPLETION,
                     datasets=[self.DATASET],
                     include_references=True,
+                    system_prompt=system_prompt,
                 )
             )
         except Exception as e:
@@ -181,6 +188,33 @@ class CogneeMemory:
 
     def active(self):
         raise NotImplementedError
+
+
+def parse_recall_answer(raw: str) -> tuple[str, list[dict]]:
+    """Split a Cognee ``recall()`` answer from its trailing ``Evidence:`` block (added by
+    ``include_references=True``) into the clean answer text and a list of citations."""
+    parts = re.split(r"\n\s*Evidence:\s*", raw, maxsplit=1, flags=re.I)
+    answer = parts[0].strip()
+    evidence: list[dict] = []
+    if len(parts) > 1:
+        for line in parts[1].splitlines():
+            line = line.strip()
+            if not line.startswith("-"):
+                continue
+            # each line: - chunk ... (data_id: ...): "the fact text (source: ...)"
+            m = re.search(r':\s*"(.*)$', line)
+            if not m:
+                continue
+            text = m.group(1).strip().strip('"').rstrip("…").strip()
+            if not text:
+                continue
+            source = "your records"
+            sm = re.search(r"\(source:\s*([^)]*)\)", text)
+            if sm:
+                source = sm.group(1).strip()
+                text = text[: sm.start()].strip().rstrip(".").strip()
+            evidence.append({"text": text, "source": source})
+    return answer, evidence
 
 
 def get_memory() -> AegisMemory:

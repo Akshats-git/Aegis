@@ -2,9 +2,10 @@
 
     uvicorn server.app:app --reload --port 8000
 
-Each request carries an X-User-Id header (the signed-in user's id, injected by the web app).
-Every user has an isolated profile; new profiles start empty. The deterministic endpoints
-are instant; /recall and /erase use the real Cognee memory when AEGIS_BACKEND=cognee.
+Each request carries an X-User-Id header (the signed-in user's id, injected by the web app);
+the deterministic JSON record (documents/facts) is isolated per user. The Cognee-backed
+memory graph (recall, the safety check's AI layer, erase) is single-tenant — one shared
+graph for the record currently being managed — by design; see aegis/memory.py.
 """
 
 from __future__ import annotations
@@ -193,8 +194,8 @@ def _cited_from_records(store: PatientStore) -> dict:
 
 @app.post("/api/recall")
 def recall(req: RecallRequest, store: PatientStore = Depends(user_store)):
-    # Answer from the user's Cognee memory graph; fall back to the JSON store if unavailable.
-    got = cognee_bridge.recall(store.user_id, req.query)
+    # Answer from the Cognee memory graph; fall back to the JSON store if unavailable.
+    got = cognee_bridge.recall(req.query)
     if got and got.get("answer"):
         return {"answer": got["answer"], "evidence": got.get("evidence", []), "engine": "cognee"}
     return _cited_from_records(store)
@@ -202,15 +203,14 @@ def recall(req: RecallRequest, store: PatientStore = Depends(user_store)):
 
 @app.post("/api/erase")
 def erase(store: PatientStore = Depends(user_store)):
-    cognee_bridge.erase(store.user_id)  # right to be forgotten: purge the Cognee graph
+    cognee_bridge.erase()  # right to be forgotten: purge the Cognee graph
     store.clear()
     return {"status": "erased"}
 
 
 @app.get("/api/memory/status")
-def memory_status(store: PatientStore = Depends(user_store)):
-    return {"enabled": cognee_bridge.enabled(),
-            "building": cognee_bridge.is_building(store.user_id)}
+def memory_status():
+    return {"enabled": cognee_bridge.enabled(), "building": cognee_bridge.is_building()}
 
 
 # ---------- record management ----------
@@ -248,7 +248,7 @@ def add_text_record(req: TextRecord, store: PatientStore = Depends(user_store)):
         added = store.add_from_text(req.text, req.source)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.resync(store.user_id, store.all_facts())
+    cognee_bridge.resync(store.all_facts())
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -263,7 +263,7 @@ def add_manual_record(req: ManualRecord, store: PatientStore = Depends(user_stor
         node = store.add_manual(req.kind, req.data)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.resync(store.user_id, store.all_facts())
+    cognee_bridge.resync(store.all_facts())
     return {"ok": True, "added": _fact_summary(node)}
 
 
@@ -290,7 +290,7 @@ def add_manual_batch(req: ManualBatch, store: PatientStore = Depends(user_store)
         added = store.add_manual_batch(items)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.resync(store.user_id, store.all_facts())
+    cognee_bridge.resync(store.all_facts())
     return {"ok": True, "added": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -317,7 +317,7 @@ def update_note(req: NoteUpdate, store: PatientStore = Depends(user_store)):
         return {"ok": False, "error": str(e)[:200]}
     # An edit replaces the note's facts, so rebuild memory from the full current record
     # (a plain add would leave the old, now-removed facts in the graph).
-    cognee_bridge.resync(store.user_id, store.all_facts())
+    cognee_bridge.resync(store.all_facts())
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -332,14 +332,14 @@ def delete_note(req: NoteDelete, store: PatientStore = Depends(user_store)):
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
     # Purge the deleted note's facts from memory so they can't resurface in an answer.
-    cognee_bridge.resync(store.user_id, store.all_facts())
+    cognee_bridge.resync(store.all_facts())
     return {"ok": True}
 
 
 @app.post("/api/records/clear")
 def clear_records(store: PatientStore = Depends(user_store)):
     store.clear()
-    cognee_bridge.erase(store.user_id)  # also wipe the memory graph, not just the JSON store
+    cognee_bridge.erase()  # also wipe the memory graph, not just the JSON store
     return {"ok": True, "count": 0}
 
 

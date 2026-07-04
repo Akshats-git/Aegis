@@ -37,3 +37,6 @@ Sign-in is handled by NextAuth. Set these in `web/.env.local`:
 - `/backend/*` is proxied to the FastAPI API (`API_URL`); `/api/*` is reserved for NextAuth.
 - Each request sends the signed-in user's id, and the backend serves that user's isolated
   profile (persisted under `server/_userdata/`). New profiles start empty.
+- The Cognee-backed memory ("Ask Aegis" and the safety check's broad assessment) is a single
+  shared graph per deployed instance, not per account — see the root README's Architecture
+  section for why. For a demo, use one account at a time.

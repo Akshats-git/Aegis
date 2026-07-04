@@ -126,7 +126,11 @@ export function SafetyCheck() {
                         <Badge tone={sevTone(c.severity)}>{c.severity}</Badge>
                         <span className="font-medium">{c.title}</span>
                         <span className="ml-auto text-[11px] uppercase tracking-wide text-muted">
-                          {c.source === "reference" ? "Known contraindication" : "AI-assessed"}
+                          {c.source === "reference"
+                            ? "Known contraindication"
+                            : c.source === "cognee"
+                              ? "From your memory graph"
+                              : "AI-assessed"}
                         </span>
                       </div>
                       {c.detail && <p className="mt-2 text-sm text-muted">{c.detail}</p>}
@@ -135,6 +139,18 @@ export function SafetyCheck() {
                           Related to: <span className="text-ink">{c.related_to}</span>
                         </p>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {result.grounded_evidence && result.grounded_evidence.length > 0 && (
+                <div className="mt-4 space-y-2 border-t border-line pt-4">
+                  <div className="label">Cited from your memory graph</div>
+                  {result.grounded_evidence.map((e, i) => (
+                    <div key={i} className="rounded-lg border border-line bg-field p-3 text-xs">
+                      <div className="text-muted">{e.text}</div>
+                      <div className="mt-1 text-rose">From: {e.source}</div>
                     </div>
                   ))}
                 </div>

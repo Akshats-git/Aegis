@@ -1,23 +1,34 @@
 """LIVE end-to-end demo against the real Cognee engine (the one you show judges).
 
-    AEGIS_BACKEND=cognee python demo_live.py
+    python demo_live.py
 
-Exercises all four Cognee verbs genuinely:
-  remember()  ingest the patient's fragmented records into one connected graph
-  recall()    answer "what should a new provider know?" with cited evidence
-  improve()   enrich the memory
-  forget()    right-to-be-forgotten erasure of the whole record (provably purges)
+Calls the exact same functions the web app calls (server/cognee_bridge.py) — this isn't a
+separate script pretending to be the product, it IS the product's memory pipeline, run
+against the synthetic patient. Exercises all four Cognee verbs genuinely:
 
-The safety-critical reconciliation (deciding the authoritative current picture and
-dropping stale facts) is done by Aegis's deterministic engine — guaranteed, not left to
-an LLM. Requires a working LLM key in .env. Offline version: demo.py.
+  remember()  ingest the patient's fragmented, conflicting records into one graph
+  forget()    reconciliation drops the stale, superseded fact — a REAL forget() call per
+              stale fact (see cognee_bridge.resync); the graph is then rebuilt from just the
+              clean picture, since single-item forget() doesn't purge graph/vector in this
+              Cognee version and a safety product cannot rely on a call that might not stick
+  recall()    "what should a new provider know?" — cited, graph-grounded, and provably
+              clean of the fact that was just forgotten
+  improve()   enrich the memory graph after each sync
+  forget()    (dataset-level, via erase()) right-to-be-forgotten — provably purges: recall
+              afterwards finds nothing
+
+The interaction safety check layers a deterministic, guaranteed rule engine (never left to
+an LLM for the life-threatening cases) with a broad, graph-grounded assessment answered by
+Cognee's own recall() over the SAME memory — so the flagship safety check is genuinely
+powered by Cognee, not a side script. Requires a working LLM key in .env.
+Offline, no-keys version: demo.py.
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
+import time
 import warnings
 
 # Quiet Cognee/aiohttp logs so the demo output is clean on stage (set before importing cognee).
@@ -28,79 +39,80 @@ warnings.filterwarnings("ignore")
 from dotenv import load_dotenv
 
 load_dotenv()
-os.environ.setdefault("AEGIS_BACKEND", "cognee")
 
-import cognee
-from aegis.memory import CogneeMemory
-from aegis.ingest import ingest_records
-from aegis.reconcile import reconcile, current_medications
-from aegis.interactions import check, suggest_alternatives
-from aegis.report import handoff_summary
+from aegis.memory import MockMemory
+from aegis.reconcile import reconcile
 from aegis.sample_patient import records, PROPOSED_DRUG
+from server import cognee_bridge
 
 
 def line() -> None:
     print("-" * 68)
 
 
-def answer_of(result) -> str:
-    try:
-        return result[0].text.strip()
-    except Exception:
-        return str(result)[:600]
-
-
-async def _reset() -> None:
-    await cognee.prune.prune_data()
-    await cognee.prune.prune_system(metadata=True)
-
-
 def main() -> None:
-    asyncio.run(_reset())
-    mem = CogneeMemory()
+    if not cognee_bridge.enabled():
+        raise SystemExit("Set LLM_API_KEY in .env first (see .env.example).")
+
     nodes = records()
 
-    line(); print("remember(): ingesting the patient's fragmented records into Cognee"); line()
-    ingest_records(mem)
-    print(f"  ingested {len(nodes)} clinical facts across 4 source documents")
-
-    line(); print("recall(): what should a new provider know? (Cognee, with evidence)"); line()
-    ans = mem.recall("List this patient's current medications by name and drug class, and "
-                     "state which medication classes must be avoided when prescribing.")
-    print("  " + answer_of(ans).replace("\n", "\n  "))
-
-    line(); print("improve(): enriching the memory graph"); line()
-    try:
-        mem.improve()
-        print("  memory enriched (edges re-weighted / graph enriched)")
-    except Exception as e:  # non-fatal for the demo
-        print(f"  (improve skipped: {type(e).__name__})")
-
-    line(); print("Reconciliation engine (deterministic): forget stale facts"); line()
-    actions, clean = reconcile(nodes, mem)
+    line(); print("remember() + forget(): syncing the patient's fragmented records"); line()
+    # The action log is a fast local computation for display; the REAL forgetting happens
+    # inside cognee_bridge.resync() below, against the live graph.
+    actions, _ = reconcile(nodes, MockMemory())
     for a in actions:
         for fid, fstatus, fsrc in a.forgotten:
-            print(f"  ✗ dropped stale '{a.entity}' [{fstatus}] from {fsrc}")
-    print("\n  " + handoff_summary(clean).replace("\n", "\n  "))
+            print(f"  dropped stale '{a.entity}' [{fstatus}] from {fsrc}")
+    print(f"  syncing {len(nodes)} facts across 4 source documents into Cognee...")
+    cognee_bridge.resync(nodes)
+    while cognee_bridge.is_building():
+        time.sleep(1)
+    print("  done — the graph now holds only the reconciled, current picture")
+
+    line(); print("recall(): what should a new provider know? (cited, from the live graph)"); line()
+    got = cognee_bridge.recall(
+        "List this patient's current medications by name and drug class, and state which "
+        "medication classes must be avoided when prescribing."
+    )
+    if got:
+        print("  " + got["answer"].replace("\n", "\n  "))
+        for e in got["evidence"]:
+            print(f"    · {e['text']}  (from: {e['source']})")
+    else:
+        print("  (no answer — Cognee unavailable)")
 
     line(); print(f"Safety check: proposed {PROPOSED_DRUG['name']} ({PROPOSED_DRUG['drug_class']})"); line()
+    from aegis.reconcile import current_medications
+    from aegis.interactions import check, suggest_alternatives
+    _, clean = reconcile(nodes, MockMemory())
     current = current_medications(clean)
     alerts = check(PROPOSED_DRUG["name"], PROPOSED_DRUG["drug_class"], current)
     for a in alerts:
-        print(f"  🚨 {a.severity.value.upper()}: {a.effect}  ({a.proposed_drug} ✕ {a.conflicting_drug})")
-        print(f"     evidence: {a.patient_source} · {a.evidence_source}")
+        print(f"  [reference/guaranteed] {a.severity.value.upper()}: {a.effect}  "
+              f"({a.proposed_drug} x {a.conflicting_drug})")
+        print(f"    evidence: {a.patient_source} - {a.evidence_source}")
     if any(a.is_blocking for a in alerts):
-        print("  🟢 safer alternatives:", "; ".join(suggest_alternatives("migraine")))
+        print("  safer alternatives:", "; ".join(suggest_alternatives("migraine")))
+
+    print()
+    print("  [cognee-grounded/broad] asking the same live graph for a second opinion...")
+    a = cognee_bridge.assess(PROPOSED_DRUG["name"], "migraine")
+    if a:
+        for c in a.get("concerns", []) or []:
+            print(f"    {c.get('severity', '?').upper()}: {c.get('concern')} "
+                  f"(related to {c.get('related_to')})")
+    else:
+        print("    (no answer — Cognee unavailable)")
 
     line(); print("forget(): right to be forgotten — erase the record, then re-query"); line()
-    mem.erase()
-    after = mem.recall("List this patient's current medications.")
+    cognee_bridge.erase()
+    after = cognee_bridge.recall("List this patient's current medications.")
     if not after:
-        print("  ✅ record fully erased — Cognee has no memory of this patient (recall finds nothing).")
+        print("  record fully erased — Cognee has no memory of this patient (recall finds nothing).")
     else:
-        print("  " + answer_of(after).replace("\n", "\n  ")[:300])
+        print("  " + after["answer"].replace("\n", "\n  ")[:300])
 
-    line(); print("Proven live on Cognee: remember · recall · improve · forget"); line()
+    line(); print("Proven live on Cognee: remember - recall - improve - forget"); line()
 
 
 if __name__ == "__main__":

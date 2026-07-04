@@ -30,7 +30,7 @@ export type Concern = {
   title: string;
   detail: string;
   related_to: string;
-  source: "reference" | "ai";
+  source: "reference" | "cognee" | "ai";
 };
 
 export type SafetyResult = {
@@ -38,6 +38,7 @@ export type SafetyResult = {
   verdict: "block" | "caution" | "ok";
   concerns: Concern[];
   alternatives: string[];
+  grounded_evidence?: { text: string; source: string }[];
   checked_against?: { medications: number; conditions: number; allergies: number };
 };
 

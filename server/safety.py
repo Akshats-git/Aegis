@@ -4,10 +4,11 @@ Given a proposed medicine (typed by name) and the patient's reconciled current r
 this combines two layers:
 
   1. Deterministic rules (aegis/interactions.py) — the known, high-stakes contraindications.
-     Always caught, high confidence, labelled "reference".
-  2. An AI assessment against the patient's FULL current medications, conditions and
-     allergies — broader coverage for the long tail, labelled "ai" so a clinician can weigh
-     it against the confirmed rules.
+     Always caught, high confidence, labelled "reference". Never overridden by the AI layer.
+  2. A broad AI assessment for the long tail, labelled "cognee" when it comes from the
+     patient's own Cognee memory graph (graph-grounded, cited — the same recall() pipeline
+     "Ask Aegis" uses), or "ai" when Cognee is unavailable and it falls back to a direct
+     LLM call over the reconciled context.
 
 Built for the emergency case: a doctor is handed the patient's record and needs to know,
 quickly, whether a new medicine is safe given everything on file.
@@ -39,10 +40,20 @@ def _reconciled_context(store):
     return meds, conditions, allergies
 
 
-def _ai_assess(name, meds, conditions, allergies) -> dict:
+def _ai_assess(name, meds, conditions, allergies, indication=None) -> tuple[dict, bool]:
+    """Broad AI safety assessment. Tries Cognee's graph-grounded, cited recall first (the
+    same memory "Ask Aegis" answers from); falls back to a direct LLM call with the
+    reconciled context if Cognee is unavailable or its answer isn't usable JSON. Returns
+    (result, from_cognee)."""
+    from server import cognee_bridge
+
+    got = cognee_bridge.assess(name, indication)
+    if got is not None:
+        return got, True
+
     key = os.getenv("LLM_API_KEY")
     if not key:
-        return {"drug_class": "", "concerns": [], "safe_alternatives": []}
+        return {"drug_class": "", "concerns": [], "safe_alternatives": []}, False
     from openai import OpenAI
 
     client = OpenAI(api_key=key)
@@ -83,17 +94,19 @@ def _ai_assess(name, meds, conditions, allergies) -> dict:
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
-        return json.loads(resp.choices[0].message.content or "{}")
+        return json.loads(resp.choices[0].message.content or "{}"), False
     except Exception:
-        return {"drug_class": "", "concerns": [], "safe_alternatives": []}
+        return {"drug_class": "", "concerns": [], "safe_alternatives": []}, False
 
 
 def assess(store, name: str, indication: str | None = None) -> dict:
     name = (name or "").strip()
     meds, conditions, allergies = _reconciled_context(store)
 
-    ai = _ai_assess(name, meds, conditions, allergies)
+    ai, from_cognee = _ai_assess(name, meds, conditions, allergies, indication)
     drug_class = (ai.get("drug_class") or "").strip()
+    ai_source = "cognee" if from_cognee else "ai"
+    grounded_evidence = (ai.get("_evidence") or []) if from_cognee else []
 
     concerns: list[dict] = []
 
@@ -127,7 +140,7 @@ def assess(store, name: str, indication: str | None = None) -> dict:
             "title": title,
             "detail": str(c.get("reason", "")).strip(),
             "related_to": str(c.get("related_to", "")).strip(),
-            "source": "ai",
+            "source": ai_source,
         })
 
     concerns.sort(key=lambda c: SEV_ORDER.get(c["severity"], 3))
@@ -153,6 +166,7 @@ def assess(store, name: str, indication: str | None = None) -> dict:
         "verdict": verdict,
         "concerns": concerns,
         "alternatives": alternatives,
+        "grounded_evidence": grounded_evidence,
         "checked_against": {
             "medications": len(meds),
             "conditions": len(conditions),
