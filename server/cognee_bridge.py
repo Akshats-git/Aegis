@@ -37,9 +37,18 @@ def _set_building(user_id: str, on: bool) -> None:
         (_building.add if on else _building.discard)(user_id)
 
 
-def ingest_async(user_id: str, nodes: list) -> None:
-    """Ingest new facts into the user's Cognee dataset in a background thread."""
-    if not enabled() or not nodes:
+def resync(user_id: str, nodes: list) -> None:
+    """Rebuild the memory graph so it holds exactly the current records, nothing else.
+
+    In this Cognee version the knowledge graph is a single shared store and recall's
+    graph-completion ignores the ``datasets`` filter, so a plain incremental add would let
+    old or deleted facts keep leaking into answers. On every change we therefore prune the
+    whole graph (via ``CogneeMemory.erase``) and re-ingest the full current record. That
+    keeps recall honest: a forgotten fact can never resurface. Runs in the background because
+    the rebuild is slow, and runs even when the record list is now empty, so deleting the
+    last note also clears memory.
+    """
+    if not enabled():
         return
     items = list(nodes)
 
@@ -49,15 +58,17 @@ def ingest_async(user_id: str, nodes: list) -> None:
             with _locks[user_id]:
                 from aegis.memory import CogneeMemory
                 mem = CogneeMemory(user_id)
+                mem.erase()  # drop the stale graph first
                 for n in items:
                     try:
                         mem.remember(n)
                     except Exception:
                         pass
-                try:
-                    mem.improve()  # self-improving memory (the fourth verb)
-                except Exception:
-                    pass
+                if items:
+                    try:
+                        mem.improve()
+                    except Exception:
+                        pass
         except Exception:
             pass
         finally:

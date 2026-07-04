@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import { Search, Loader2, Quote } from "lucide-react";
 import { api, type RecallResult } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Badge, Button } from "./ui";
@@ -101,7 +102,28 @@ export function AskRecord() {
                 <Quote className="h-4 w-4 text-rose" />
                 <span className="label text-rose">Answer</span>
               </div>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">{res.answer}</p>
+              <div className="space-y-2.5 text-sm leading-relaxed">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="leading-relaxed">{children}</p>,
+                    strong: ({ children }) => (
+                      <strong className="font-semibold text-ink">{children}</strong>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc space-y-1 pl-5">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal space-y-1.5 pl-5">{children}</ol>
+                    ),
+                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                    h1: ({ children }) => <h3 className="text-base font-semibold">{children}</h3>,
+                    h2: ({ children }) => <h3 className="text-base font-semibold">{children}</h3>,
+                    h3: ({ children }) => <h3 className="text-base font-semibold">{children}</h3>,
+                  }}
+                >
+                  {res.answer}
+                </ReactMarkdown>
+              </div>
               {res.evidence.length > 0 && (
                 <div className="mt-4 space-y-2">
                   <div className="label">Based on your records</div>

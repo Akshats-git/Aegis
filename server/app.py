@@ -247,7 +247,7 @@ def add_text_record(req: TextRecord, store: PatientStore = Depends(user_store)):
         added = store.add_from_text(req.text, req.source)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.ingest_async(store.user_id, added)
+    cognee_bridge.resync(store.user_id, store.all_facts())
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -262,7 +262,7 @@ def add_manual_record(req: ManualRecord, store: PatientStore = Depends(user_stor
         node = store.add_manual(req.kind, req.data)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.ingest_async(store.user_id, [node])
+    cognee_bridge.resync(store.user_id, store.all_facts())
     return {"ok": True, "added": _fact_summary(node)}
 
 
@@ -289,7 +289,7 @@ def add_manual_batch(req: ManualBatch, store: PatientStore = Depends(user_store)
         added = store.add_manual_batch(items)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.ingest_async(store.user_id, added)
+    cognee_bridge.resync(store.user_id, store.all_facts())
     return {"ok": True, "added": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -314,7 +314,9 @@ def update_note(req: NoteUpdate, store: PatientStore = Depends(user_store)):
         added = store.update_note(req.id, req.text)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
-    cognee_bridge.ingest_async(store.user_id, added)
+    # An edit replaces the note's facts, so rebuild memory from the full current record
+    # (a plain add would leave the old, now-removed facts in the graph).
+    cognee_bridge.resync(store.user_id, store.all_facts())
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -328,12 +330,15 @@ def delete_note(req: NoteDelete, store: PatientStore = Depends(user_store)):
         store.delete_note(req.id)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    # Purge the deleted note's facts from memory so they can't resurface in an answer.
+    cognee_bridge.resync(store.user_id, store.all_facts())
     return {"ok": True}
 
 
 @app.post("/api/records/clear")
 def clear_records(store: PatientStore = Depends(user_store)):
     store.clear()
+    cognee_bridge.erase(store.user_id)  # also wipe the memory graph, not just the JSON store
     return {"ok": True, "count": 0}
 
 

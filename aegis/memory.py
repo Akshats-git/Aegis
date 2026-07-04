@@ -162,12 +162,18 @@ class CogneeMemory:
         return []
 
     def erase(self) -> None:
-        """Right to be forgotten: purge the entire patient record (graph + vector)."""
-        try:
-            self._run(self._cognee.forget(dataset=self.DATASET))
-        except Exception as e:
-            if "DatasetNotFound" not in type(e).__name__ and "No datasets" not in str(e):
-                raise
+        """Purge memory so nothing can resurface in a later answer.
+
+        In this Cognee version the knowledge graph is a single shared store and recall's
+        graph-completion ignores the ``datasets`` filter, so ``forget(dataset=)`` is not
+        enough: it drops the dataset's documents but leaves orphaned graph nodes that still
+        leak into answers (proven: a fresh dataset with one fact still recalled facts from
+        old data). Pruning the whole system is the only reliable erasure here. This makes the
+        store single-tenant — it holds one patient's current record at a time, which is the
+        right model for the demo.
+        """
+        self._run(self._cognee.prune.prune_data())
+        self._run(self._cognee.prune.prune_system(graph=True, vector=True, metadata=True))
         self._data_ids.clear()
 
     def all_nodes(self):  # graph dump — wired in a later phase for the visualizer
