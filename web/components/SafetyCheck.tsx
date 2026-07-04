@@ -45,7 +45,7 @@ export function SafetyCheck({ candidates }: { candidates: Candidate[] }) {
         <SectionTitle
           eyebrow="Peace of mind"
           title="Check a new medicine before you take it"
-          desc="Type any medicine a doctor is considering. Aegis checks it against everything on your record — your current medicines, conditions and allergies — and flags anything unsafe."
+          desc="Type any medicine your doctor is considering. Aegis checks it against your current medicines, conditions and allergies. It flags anything unsafe."
         />
       </Reveal>
 

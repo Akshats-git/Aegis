@@ -60,7 +60,7 @@ export default function Overview() {
   const summary =
     meds.length > 0
       ? `You have ${meds.length} ${meds.length === 1 ? "medicine" : "medicines"} on file. Aegis keeps them up to date and checks new ones for safety.`
-      : "Your records are saved and ready. Add your medicines to unlock safety checks.";
+      : "Your records are saved. Add your medicines to turn on safety checks.";
 
   return (
     <div className="space-y-6">

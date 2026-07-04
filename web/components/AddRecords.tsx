@@ -89,7 +89,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
         <SectionTitle
           eyebrow="Get started"
           title="Add your health records"
-          desc="Paste anything from a doctor's note, discharge summary, or prescription and Aegis organizes it for you. Or fill in your medications, conditions, and allergies yourself — all in one place."
+          desc="Paste anything from a doctor's note, discharge summary, or prescription. Aegis sorts it into your record. You can also add your medications, conditions, and allergies by hand."
         />
       </Reveal>
 
