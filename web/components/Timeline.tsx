@@ -3,10 +3,19 @@
 import { motion } from "framer-motion";
 import { Pill, AlertTriangle, Sparkles } from "lucide-react";
 import type { Med, ReconcileAction } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { Card, Reveal, SectionTitle, Badge } from "./ui";
 
 function classTone(c: string | null) {
   return c === "MAOI" ? "text-danger" : "text-rose";
+}
+
+// A readable date line. When a note gives no start date we don't show a bare "?".
+function dateLabel(m: Med): string {
+  if (m.started && m.stopped) return `${formatDate(m.started)} → ${formatDate(m.stopped)}`;
+  if (m.started) return `${formatDate(m.started)} → present`;
+  if (m.stopped) return `stopped ${formatDate(m.stopped)}`;
+  return m.status === "active" ? "ongoing · start date not recorded" : "date not recorded";
 }
 
 export function Timeline({
@@ -76,7 +85,7 @@ export function Timeline({
                     {m.forgotten && <Badge tone="danger">removed · out of date</Badge>}
                   </div>
                   <div className="mt-0.5 pl-6 font-mono text-xs text-muted">
-                    {m.started ?? "?"} → {m.stopped ?? "present"} · {m.source}
+                    {dateLabel(m)} · {m.source}
                   </div>
                 </motion.li>
               ))}
@@ -91,7 +100,11 @@ export function Timeline({
               <span className="label text-rose">What we updated for you</span>
             </div>
             {actions.length === 0 && (
-              <p className="text-sm text-muted">Everything looks up to date.</p>
+              <p className="text-sm text-muted">
+                No conflicting records found. When two notes disagree about a medicine, Aegis
+                keeps the most recent one and retires the older one here, so your list never
+                shows a medicine you&apos;ve already stopped.
+              </p>
             )}
             {actions.map((a) => (
               <div key={a.entity} className="space-y-3 text-sm">

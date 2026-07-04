@@ -2,6 +2,7 @@
 
 import { HeartPulse, Pill, ShieldAlert, Clock } from "lucide-react";
 import type { Handoff as HandoffData } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { Card, Reveal, SectionTitle, Badge } from "./ui";
 
 function Row({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -50,7 +51,7 @@ export function Handoff({ data }: { data: HandoffData }) {
           <Row icon={<Clock className="h-4 w-4 text-muted" />} title="Recently discontinued">
             {data.discontinued.map((d) => (
               <Badge key={d.name} tone="muted">
-                {d.name} · stopped {d.stopped}
+                {d.name} · stopped {formatDate(d.stopped)}
               </Badge>
             ))}
           </Row>

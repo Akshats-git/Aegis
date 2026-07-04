@@ -147,8 +147,7 @@ class PatientStore:
         s = (source or "").strip()
         if s:
             return s
-        now = datetime.now()
-        return f"Note · {now.strftime('%b')} {now.day}, {now.year}"
+        return f"Note · {datetime.now().strftime('%d-%m-%Y')}"
 
     def _doc_by_id(self, note_id: str) -> dict | None:
         return next((d for d in self.documents if d.get("id") == note_id), None)
@@ -246,6 +245,7 @@ def extract_facts(text: str, source: str) -> list[ClinicalNode]:
         raise RuntimeError("Text extraction is not configured on the server.")
     client = OpenAI(api_key=key)
     model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    today = datetime.now().date().isoformat()
 
     resp = client.chat.completions.create(
         model=model,
@@ -254,6 +254,13 @@ def extract_facts(text: str, source: str) -> list[ClinicalNode]:
         messages=[
             {"role": "system",
              "content": "You extract structured clinical facts from medical notes. "
+                        f"Today's date is {today}. When the note uses relative dates "
+                        "(e.g. 'today', 'yesterday', 'started last week', 'for 10 days', "
+                        "'end in 2 weeks'), resolve them to absolute calendar dates in "
+                        "YYYY-MM-DD. If a medication gives a start plus a duration, set "
+                        "'started' to the start date and 'stopped' to start + duration. Mark a "
+                        f"medication 'discontinued' only if it was already stopped on or before "
+                        f"{today}; a course that ends in the future is still 'active'. "
                         + _SCHEMA_HINT},
             {"role": "user", "content": text},
         ],

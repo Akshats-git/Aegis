@@ -6,11 +6,11 @@ import { FilePlus2, Loader2, Sparkles, Plus, Check, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { Card, Reveal, SectionTitle, Button } from "./ui";
 
-type MedRow = { name: string; drug_class: string; dose: string };
+type MedRow = { name: string; drug_class: string; dose: string; started: string; stopped: string };
 type CondRow = { name: string };
 type AllergyRow = { substance: string; reaction: string };
 
-const emptyMed = (): MedRow => ({ name: "", drug_class: "", dose: "" });
+const emptyMed = (): MedRow => ({ name: "", drug_class: "", dose: "", started: "", stopped: "" });
 const emptyCond = (): CondRow => ({ name: "" });
 const emptyAllergy = (): AllergyRow => ({ substance: "", reaction: "" });
 
@@ -56,7 +56,17 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
 
   async function submitManual() {
     const payload = {
-      medications: meds.filter((m) => m.name.trim()),
+      medications: meds
+        .filter((m) => m.name.trim())
+        .map((m) => ({
+          name: m.name,
+          drug_class: m.drug_class,
+          dose: m.dose,
+          started: m.started,
+          stopped: m.stopped,
+          // An end date means the medicine was stopped, so record it as discontinued.
+          status: m.stopped ? "discontinued" : "active",
+        })),
       conditions: conds.filter((c) => c.name.trim()),
       allergies: allergies.filter((a) => a.substance.trim()),
     };
@@ -162,6 +172,22 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
                       className={inputCls} placeholder="Dose (optional)" value={m.dose}
                       onChange={(e) => setMeds((r) => r.map((x, j) => (j === i ? { ...x, dose: e.target.value } : x)))}
                     />
+                    <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+                      <label className="flex flex-1 items-center gap-2 text-xs text-muted">
+                        <span className="w-16 shrink-0">Start date</span>
+                        <input
+                          type="date" className={inputCls} value={m.started}
+                          onChange={(e) => setMeds((r) => r.map((x, j) => (j === i ? { ...x, started: e.target.value } : x)))}
+                        />
+                      </label>
+                      <label className="flex flex-1 items-center gap-2 text-xs text-muted">
+                        <span className="w-16 shrink-0">End date</span>
+                        <input
+                          type="date" className={inputCls} value={m.stopped}
+                          onChange={(e) => setMeds((r) => r.map((x, j) => (j === i ? { ...x, stopped: e.target.value } : x)))}
+                        />
+                      </label>
+                    </div>
                   </Row>
                 ))}
               </RecordSection>

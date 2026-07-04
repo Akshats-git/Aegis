@@ -4,18 +4,11 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FileText, ChevronRight, Pencil, Trash2, Loader2, Check, X } from "lucide-react";
 import { api, type Note, type FactSummary } from "@/lib/api";
+import { formatDateTime } from "@/lib/utils";
 import { Card, Reveal, SectionTitle } from "./ui";
 
 function prettyName(f: string) {
   return f.replace(/\.md$/, "").replace(/^\d{4}-\d{2}-\d{2}_/, "").replace(/_/g, " ");
-}
-function formatWhen(iso: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleString(undefined, {
-    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
-  });
 }
 
 export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () => void }) {
@@ -77,7 +70,7 @@ export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () =>
         {notes.map((n, i) => {
           const isOpen = open === n.id;
           const isEditing = editing === n.id;
-          const when = formatWhen(n.created);
+          const when = formatDateTime(n.created);
           return (
             <Reveal key={n.id} delay={i * 0.05}>
               <Card className="group flex flex-col transition-colors hover:border-rose/30">
