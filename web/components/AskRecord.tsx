@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Loader2, Quote } from "lucide-react";
 import { api, type RecallResult } from "@/lib/api";
@@ -16,6 +16,25 @@ export function AskRecord() {
   const [q, setQ] = useState("");
   const [res, setRes] = useState<RecallResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [building, setBuilding] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const tick = async () => {
+      try {
+        const s = await api.memoryStatus();
+        if (active) setBuilding(s.building);
+      } catch {
+        /* ignore */
+      }
+    };
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
 
   async function ask() {
     setLoading(true);
@@ -36,6 +55,12 @@ export function AskRecord() {
           desc="Get clear answers based on your own records. We show you where each answer comes from."
         />
       </Reveal>
+      {building && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm text-rose">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Saving your latest records. Answers will include them in a moment.
+        </div>
+      )}
       <Reveal>
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row">

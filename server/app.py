@@ -26,6 +26,7 @@ from aegis.interactions import check, suggest_alternatives, CANDIDATE_DRUGS
 from aegis.report import handoff_summary
 from aegis.memory import MockMemory
 from server.store import get_store, PatientStore
+from server import cognee_bridge
 
 app = FastAPI(title="Aegis API", version="1.0")
 app.add_middleware(
@@ -191,22 +192,24 @@ def _cited_from_records(store: PatientStore) -> dict:
 
 @app.post("/api/recall")
 def recall(req: RecallRequest, store: PatientStore = Depends(user_store)):
-    if os.getenv("AEGIS_BACKEND", "mock").lower() == "cognee":
-        try:
-            from aegis.memory import CogneeMemory
-            res = CogneeMemory().recall(req.query)
-            answer = res[0].text if res else ""
-            if answer:
-                return {"answer": answer, "evidence": [], "engine": "cognee"}
-        except Exception:
-            pass
+    # Answer from the user's Cognee memory graph; fall back to the JSON store if unavailable.
+    got = cognee_bridge.recall(store.user_id, req.query)
+    if got and got.get("answer"):
+        return {"answer": got["answer"], "evidence": got.get("evidence", []), "engine": "cognee"}
     return _cited_from_records(store)
 
 
 @app.post("/api/erase")
 def erase(store: PatientStore = Depends(user_store)):
+    cognee_bridge.erase(store.user_id)  # right to be forgotten: purge the Cognee graph
     store.clear()
     return {"status": "erased"}
+
+
+@app.get("/api/memory/status")
+def memory_status(store: PatientStore = Depends(user_store)):
+    return {"enabled": cognee_bridge.enabled(),
+            "building": cognee_bridge.is_building(store.user_id)}
 
 
 # ---------- record management ----------
@@ -244,6 +247,7 @@ def add_text_record(req: TextRecord, store: PatientStore = Depends(user_store)):
         added = store.add_from_text(req.text, req.source)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    cognee_bridge.ingest_async(store.user_id, added)
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -258,6 +262,7 @@ def add_manual_record(req: ManualRecord, store: PatientStore = Depends(user_stor
         node = store.add_manual(req.kind, req.data)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    cognee_bridge.ingest_async(store.user_id, [node])
     return {"ok": True, "added": _fact_summary(node)}
 
 
@@ -284,6 +289,7 @@ def add_manual_batch(req: ManualBatch, store: PatientStore = Depends(user_store)
         added = store.add_manual_batch(items)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    cognee_bridge.ingest_async(store.user_id, added)
     return {"ok": True, "added": [_fact_summary(n) for n in added], "count": len(added)}
 
 
@@ -308,6 +314,7 @@ def update_note(req: NoteUpdate, store: PatientStore = Depends(user_store)):
         added = store.update_note(req.id, req.text)
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    cognee_bridge.ingest_async(store.user_id, added)
     return {"ok": True, "extracted": [_fact_summary(n) for n in added], "count": len(added)}
 
 

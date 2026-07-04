@@ -23,6 +23,7 @@ export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () =>
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   function startEdit(n: Note) {
     setEditing(n.id);
@@ -47,13 +48,13 @@ export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () =>
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this note and everything extracted from it?")) return;
     setBusy(true);
     try {
       const r = await api.deleteNote(id);
       if (r.ok) {
         setOpen(null);
         setEditing(null);
+        setConfirmDelete(null);
         onChange();
       } else {
         alert(r.error ?? "Could not delete the note.");
@@ -114,14 +115,27 @@ export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () =>
                         <div className="mb-1.5 flex items-center justify-between">
                           <span className="label">Note</span>
                           {!isEditing && (
-                            <div className="flex items-center gap-1">
-                              <IconButton onClick={() => startEdit(n)} title="Edit note">
-                                <Pencil className="h-3.5 w-3.5" /> Edit
-                              </IconButton>
-                              <IconButton onClick={() => remove(n.id)} title="Delete note" danger>
-                                <Trash2 className="h-3.5 w-3.5" /> Delete
-                              </IconButton>
-                            </div>
+                            confirmDelete === n.id ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted">Delete this note?</span>
+                                <IconButton onClick={() => setConfirmDelete(null)} title="Keep note">
+                                  Cancel
+                                </IconButton>
+                                <IconButton onClick={() => remove(n.id)} title="Confirm delete" danger>
+                                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                  Delete
+                                </IconButton>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <IconButton onClick={() => startEdit(n)} title="Edit note">
+                                  <Pencil className="h-3.5 w-3.5" /> Edit
+                                </IconButton>
+                                <IconButton onClick={() => setConfirmDelete(n.id)} title="Delete note" danger>
+                                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                                </IconButton>
+                              </div>
+                            )
                           )}
                         </div>
 

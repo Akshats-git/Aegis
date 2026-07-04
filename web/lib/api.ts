@@ -140,4 +140,5 @@ export const api = {
     post<SafetyResult>("/safety-check", { name, indication }),
   recall: (query: string) => post<RecallResult>("/recall", { query }),
   erase: () => post<{ status: string }>("/erase", {}),
+  memoryStatus: () => get<{ enabled: boolean; building: boolean }>("/memory/status"),
 };

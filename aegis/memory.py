@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from typing import Iterable, Protocol
 
-from .schema import ClinicalNode, ClinicalStatus, Medication
+from .schema import ClinicalNode, ClinicalStatus, Medication, Condition, Allergy
 
 
 class AegisMemory(Protocol):
@@ -39,6 +39,17 @@ def describe(node: ClinicalNode) -> str:
             s += f" Stopped {node.stopped}."
         if node.reason:
             s += f" Reason: {node.reason}."
+        return s + src
+    if isinstance(node, Condition):
+        s = f"Condition: {node.name}. Status: {node.status.value}."
+        if node.onset:
+            s += f" Since {node.onset}."
+        return s + src
+    if isinstance(node, Allergy):
+        s = f"Allergy to {node.substance}."
+        if node.reaction:
+            s += f" Reaction: {node.reaction}."
+        s += f" Severity: {node.severity.value}."
         return s + src
     kind = type(node).__name__
     fields = node.model_dump(exclude={"id", "source"})
@@ -84,21 +95,29 @@ class MockMemory:
 
 
 class CogneeMemory:
-    """Real backend, wired against the cognee 1.2 async API (validated in prior work)."""
+    """Real backend, wired against the cognee 1.2 async API (validated in prior work).
 
-    DATASET = "aegis_patient"
+    Each user gets their own dataset (``aegis_<hash>``) so recall/forget are scoped to that
+    user's records. Pass a ``user_id`` for the multi-user web app; omit it for the single
+    demo dataset.
+    """
 
-    def __init__(self) -> None:
+    def __init__(self, user_id: str | None = None) -> None:
         import asyncio
         import cognee
+        import hashlib
         from cognee.modules.search.types import SearchType
 
         self._cognee = cognee
         self._SearchType = SearchType
         self._run = asyncio.run
-        # All facts live in ONE connected dataset (so recall reasons over the whole graph),
-        # while we capture each fact's data_id so forget() can retire exactly one fact.
-        self._data_ids: dict[str, str] = {}  # node.id -> cognee data_id
+        if user_id:
+            h = hashlib.sha256(user_id.encode()).hexdigest()[:16]
+            self.DATASET = f"aegis_{h}"
+        else:
+            self.DATASET = "aegis_patient"
+        # node.id -> cognee data_id (for single-fact forget within one connected dataset)
+        self._data_ids: dict[str, str] = {}
 
     def remember(self, node: ClinicalNode) -> None:
         r = self._run(self._cognee.remember(
@@ -122,7 +141,7 @@ class CogneeMemory:
                 )
             )
         except Exception as e:
-            # After erase() the dataset is gone → recall 404s. That's the erasure proof.
+            # No data yet, or dataset erased → recall 404s. Treat as "nothing to recall".
             if "DatasetNotFound" in type(e).__name__ or "No datasets" in str(e):
                 return []
             raise
@@ -144,7 +163,11 @@ class CogneeMemory:
 
     def erase(self) -> None:
         """Right to be forgotten: purge the entire patient record (graph + vector)."""
-        self._run(self._cognee.forget(dataset=self.DATASET))
+        try:
+            self._run(self._cognee.forget(dataset=self.DATASET))
+        except Exception as e:
+            if "DatasetNotFound" not in type(e).__name__ and "No datasets" not in str(e):
+                raise
         self._data_ids.clear()
 
     def all_nodes(self):  # graph dump — wired in a later phase for the visualizer
