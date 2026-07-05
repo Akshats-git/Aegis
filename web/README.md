@@ -1,4 +1,4 @@
-# Aegis — web app
+# Aegis: web app
 
 Next.js (App Router) + Tailwind + Framer Motion + NextAuth + Geist. Talks to the FastAPI
 backend. Each signed-in user has their own private profile.
@@ -20,7 +20,7 @@ npm run dev                           # http://localhost:3000
 
 Sign-in is handled by NextAuth. Set these in `web/.env.local`:
 
-- `NEXTAUTH_SECRET` — required. Generate: `openssl rand -base64 32`
+- `NEXTAUTH_SECRET`: required. Generate with `openssl rand -base64 32`
 - `NEXTAUTH_URL=http://localhost:3000`
 - `API_URL=http://localhost:8000`
 
@@ -38,5 +38,5 @@ Sign-in is handled by NextAuth. Set these in `web/.env.local`:
 - Each request sends the signed-in user's id, and the backend serves that user's isolated
   profile (persisted under `server/_userdata/`). New profiles start empty.
 - The Cognee-backed memory ("Ask Aegis" and the safety check's broad assessment) is a single
-  shared graph per deployed instance, not per account — see the root README's Architecture
+  shared graph per deployed instance, not per account. See the root README's Architecture
   section for why. For a demo, use one account at a time.
