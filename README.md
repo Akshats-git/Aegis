@@ -29,29 +29,29 @@ This isn't a corner cut for the hackathon. `cognee.prune.prune_data()` and `prun
 
 The deterministic JSON record (your documents and structured facts) is isolated per signed-in account, since that part doesn't touch Cognee's shared state. Multi-tenant Cognee memory, once the underlying library supports scoped erasure, is the natural next step.
 
-### System overview
+### Tech stack
 
-```
-web/ (Next.js)  --HTTP-->  server/app.py (FastAPI)
-                                 |
-                    +------------+------------+
-                    |                         |
-             server/store.py           server/cognee_bridge.py
-             (per-account JSON:         (Cognee memory graph:
-              medications, conditions,   remember / forget / recall /
-              allergies, notes)          improve, backed by an LLM
-                    |                    for extraction + embeddings)
-                    |                         |
-             server/safety.py  <--------------+
-             (deterministic drug-interaction
-              rule engine, never AI-decided)
-```
+| Layer | Tech | Notes |
+|---|---|---|
+| Frontend | Next.js 14, React 18, TypeScript | App Router, Tailwind CSS, Framer Motion, NextAuth (Google + guest login) |
+| Backend | FastAPI, Uvicorn | Own email/password auth (PBKDF2-HMAC-SHA256), no extra dependency |
+| Storage | JSON on disk | One file per account, keyed by user id |
+| Memory | Cognee (self-hosted) | Graph memory: remember, forget, recall, improve |
+| LLM | OpenAI | Used by Cognee for extraction and embeddings; swappable in `.env` |
+| Safety rules | Plain Python | Deterministic drug-interaction checks, not AI-decided |
+| Data | Synthetic only | No real patient data |
 
-- **Frontend** (`web/`): Next.js 14 (App Router) + React 18 + TypeScript, Tailwind CSS for styling, Framer Motion for animation, NextAuth for Google/guest sign-in, `react-markdown` for rendering LLM answers.
-- **Backend** (`server/`): FastAPI + Uvicorn. `auth.py` handles email/password accounts (PBKDF2-HMAC-SHA256 hashing, stdlib only). `store.py` persists each account's structured clinical record as JSON on disk, keyed by user id. `cognee_bridge.py` is the only module that talks to Cognee. `safety.py` is the deterministic drug-interaction rule engine that sits underneath the AI-grounded safety check.
-- **Memory layer** (`aegis/`): the clinical domain model (`schema.py`), note ingestion (`ingest.py`), reconciliation/forgetting logic (`reconcile.py`), the curated interaction knowledge base (`interactions.py`), and report/timeline rendering (`report.py`, `visualize.py`).
-- **Memory engine**: [Cognee](https://www.cognee.ai) (self-hosted, open source), using OpenAI models for extraction and embeddings by default (swappable via `.env`).
-- **Data**: synthetic patient records and an open drug-interaction dataset only — no real patient data.
+### Where things live
+
+| Folder | What's in it |
+|---|---|
+| `web/` | The Next.js app (UI, login, forms, timeline) |
+| `server/app.py` | The API the frontend talks to |
+| `server/auth.py` | Sign up / login |
+| `server/store.py` | Reads and writes each account's record |
+| `server/cognee_bridge.py` | The only file that talks to Cognee |
+| `server/safety.py` | The hard-coded drug-interaction rules |
+| `aegis/` | Clinical data model, note parsing, reconciliation, interaction data, reports |
 
 ## Status
 All phases are done and validated live against real Cognee:
