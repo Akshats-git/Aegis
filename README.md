@@ -77,7 +77,7 @@ python -m aegis.visualize   # terminal timeline + alert card view
 ```bash
 # 1) API backend
 uvicorn server.app:app --port 8000
-# 2) Frontend (see web/README.md)
+# 2) Frontend
 cd web && npm install && npm run dev        # http://localhost:3000
 ```
 
