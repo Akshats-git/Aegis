@@ -345,7 +345,7 @@ def clear_records(store: PatientStore = Depends(user_store)):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "backend": os.getenv("AEGIS_BACKEND", "mock")}
+    return {"status": "ok", "backend": os.getenv("CANON_BACKEND", os.getenv("AEGIS_BACKEND", "mock"))}
 
 
 @app.get("/")
