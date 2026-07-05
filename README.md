@@ -29,6 +29,30 @@ This isn't a corner cut for the hackathon. `cognee.prune.prune_data()` and `prun
 
 The deterministic JSON record (your documents and structured facts) is isolated per signed-in account, since that part doesn't touch Cognee's shared state. Multi-tenant Cognee memory, once the underlying library supports scoped erasure, is the natural next step.
 
+### System overview
+
+```
+web/ (Next.js)  --HTTP-->  server/app.py (FastAPI)
+                                 |
+                    +------------+------------+
+                    |                         |
+             server/store.py           server/cognee_bridge.py
+             (per-account JSON:         (Cognee memory graph:
+              medications, conditions,   remember / forget / recall /
+              allergies, notes)          improve, backed by an LLM
+                    |                    for extraction + embeddings)
+                    |                         |
+             server/safety.py  <--------------+
+             (deterministic drug-interaction
+              rule engine, never AI-decided)
+```
+
+- **Frontend** (`web/`): Next.js 14 (App Router) + React 18 + TypeScript, Tailwind CSS for styling, Framer Motion for animation, NextAuth for Google/guest sign-in, `react-markdown` for rendering LLM answers.
+- **Backend** (`server/`): FastAPI + Uvicorn. `auth.py` handles email/password accounts (PBKDF2-HMAC-SHA256 hashing, stdlib only). `store.py` persists each account's structured clinical record as JSON on disk, keyed by user id. `cognee_bridge.py` is the only module that talks to Cognee. `safety.py` is the deterministic drug-interaction rule engine that sits underneath the AI-grounded safety check.
+- **Memory layer** (`aegis/`): the clinical domain model (`schema.py`), note ingestion (`ingest.py`), reconciliation/forgetting logic (`reconcile.py`), the curated interaction knowledge base (`interactions.py`), and report/timeline rendering (`report.py`, `visualize.py`).
+- **Memory engine**: [Cognee](https://www.cognee.ai) (self-hosted, open source), using OpenAI models for extraction and embeddings by default (swappable via `.env`).
+- **Data**: synthetic patient records and an open drug-interaction dataset only — no real patient data.
+
 ## Status
 All phases are done and validated live against real Cognee:
 - Clinical model, reconciliation and forget engine, drug-interaction safety net.
@@ -77,3 +101,7 @@ Licensed under the MIT License. See [LICENSE](LICENSE).
 
 > Aegis is a patient-advocacy / decision-support prototype using synthetic data. It is
 > not a medical device and does not replace professional medical judgement.
+
+---
+
+Built with the help of [Claude](https://claude.com/claude-code).
