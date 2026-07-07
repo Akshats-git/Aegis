@@ -1,17 +1,18 @@
-"""Comprehensive medication safety assessment for a clinician.
+"""Medication safety assessment for a clinician.
 
-Given a proposed medicine (typed by name) and the patient's reconciled current record,
-this combines two layers:
+Given a proposed medicine (typed by name) and the patient's reconciled current record, this
+combines two layers:
 
-  1. Deterministic rules (aegis/interactions.py) — the known, high-stakes contraindications.
-     Always caught, high confidence, labelled "reference". Never overridden by the AI layer.
-  2. A broad AI assessment for the long tail, labelled "cognee" when it comes from the
-     patient's own Cognee memory graph (graph-grounded, cited — the same recall() pipeline
-     "Ask Aegis" uses), or "ai" when Cognee is unavailable and it falls back to a direct
-     LLM call over the reconciled context.
+  1. Deterministic rules (aegis/interactions.py) cover the known, high-stakes
+     contraindications. They are always caught, high confidence, and labelled "reference".
+     The AI layer never overrides them.
+  2. A broad AI assessment covers the long tail. It is labelled "cognee" when it comes from
+     the patient's own Cognee memory graph, which is graph-grounded and cited through the
+     same recall() pipeline "Ask Aegis" uses. It is labelled "ai" when Cognee is unavailable
+     and the code falls back to a direct LLM call over the reconciled context.
 
-Built for the emergency case: a doctor is handed the patient's record and needs to know,
-quickly, whether a new medicine is safe given everything on file.
+Built for the emergency case: a doctor is handed the patient's record and needs to know
+quickly whether a new medicine is safe given everything on file.
 """
 
 from __future__ import annotations
@@ -42,8 +43,8 @@ def _reconciled_context(store):
 
 def _ai_assess(name, meds, conditions, allergies, indication=None) -> tuple[dict, bool]:
     """Broad AI safety assessment. Tries Cognee's graph-grounded, cited recall first (the
-    same memory "Ask Aegis" answers from); falls back to a direct LLM call with the
-    reconciled context if Cognee is unavailable or its answer isn't usable JSON. Returns
+    same memory "Ask Aegis" answers from), then falls back to a direct LLM call with the
+    reconciled context if Cognee is unavailable or its answer is not usable JSON. Returns
     (result, from_cognee)."""
     from server import cognee_bridge
 
@@ -145,9 +146,8 @@ def assess(store, name: str, indication: str | None = None) -> dict:
 
     concerns.sort(key=lambda c: SEV_ORDER.get(c["severity"], 3))
 
-    # Only the evidence-based (deterministic) rules can hard-"block". AI concerns are
-    # advisory and cap the verdict at "caution", so an AI false positive can never block a
-    # genuinely safe medicine.
+    # Only the deterministic rules can block. AI concerns are advisory and cap the verdict
+    # at "caution", so an AI false positive can never block a medicine that is actually safe.
     ref_block = any(c["source"] == "reference" and SEV_ORDER.get(c["severity"], 3) <= 1
                     for c in concerns)
     if ref_block:

@@ -1,13 +1,13 @@
 """Drug-interaction safety net.
 
-A curated, open knowledge base of clinically significant drug-drug interactions, keyed by
-drug class (more robust than exact drug names). Facts here are well-established
-contraindications from public sources (FDA prescribing information / DailyMed, NIH RxNav /
-openFDA) — the same open data an unlimited version would pull live.
+A curated knowledge base of clinically significant drug-drug interactions, keyed by drug
+class rather than exact drug name so it matches more broadly. The entries are
+well-established contraindications from public sources such as FDA prescribing information
+(DailyMed and openFDA) and NIH RxNav.
 
-check() takes the patient's CLEAN current medication list (post-reconciliation) plus a
-proposed new drug, and returns safety alerts, each citing BOTH the patient's source note
-and the interaction reference. That provenance is what makes a warning trustworthy.
+check() takes the patient's reconciled current medication list plus a proposed new drug and
+returns safety alerts. Each alert cites both the patient's source note and the interaction
+reference, which is what makes a warning trustworthy.
 """
 
 from __future__ import annotations
@@ -61,13 +61,13 @@ INTERACTIONS: list[Interaction] = [
                 "Avoid meperidine and tramadol with MAOIs. Use non-serotonergic analgesia."),
     Interaction("MAOI", "sympathomimetic", Severity.LIFE_THREATENING,
                 "hypertensive crisis",
-                "blocked catecholamine metabolism → surge in blood pressure",
+                "blocked catecholamine metabolism causing a surge in blood pressure",
                 "CONTRAINDICATED. Avoid decongestants/stimulants with MAOIs."),
     Interaction("MAOI", "antitussive", Severity.SEVERE,
                 "serotonin syndrome (dextromethorphan)",
                 "serotonergic activity",
                 "Avoid dextromethorphan-containing products with MAOIs."),
-    # A few beyond the demo, to show the checker generalizes:
+    # A few entries beyond the demo scenario, to show the checker generalizes.
     Interaction("anticoagulant", "NSAID", Severity.SEVERE,
                 "increased bleeding risk",
                 "additive effects on hemostasis + GI irritation",
@@ -156,8 +156,8 @@ def suggest_alternatives(indication: str) -> list[str]:
     return SAFE_ALTERNATIVES.get(indication.lower(), [])
 
 
-# Drugs a clinician might propose in the UI — chosen to show a range of outcomes against
-# this patient (some catch the MAOI danger, some are safe).
+# Drugs a clinician might propose in the UI, chosen to show a range of outcomes against
+# this patient. Some catch the MAOI danger and some are safe.
 CANDIDATE_DRUGS = [
     {"name": "sumatriptan", "drug_class": "triptan", "indication": "migraine"},
     {"name": "dextromethorphan", "drug_class": "antitussive", "indication": "cough"},

@@ -1,14 +1,15 @@
-"""The demo patient (synthetic): Margaret Chen.
+"""The synthetic demo patient: Margaret Chen.
 
 These are the clinical facts as they appear across four fragmented source documents in
-data/records/. Note the deliberately conflicting facts about sertraline — one source
-(older PCP list) still shows it ACTIVE, while psychiatry later DISCONTINUED it. That
-fragmentation is exactly what gets real patients hurt, and what Aegis reconciles.
+data/records/. The facts about sertraline conflict on purpose: the older PCP list still
+shows it as active, while a later psychiatry note discontinued it. That kind of
+fragmentation is what Aegis reconciles.
 
 The planted danger:
-  * phenelzine (an MAOI) is CURRENTLY ACTIVE but buried in a psychiatry note.
+  * phenelzine (an MAOI) is currently active but buried in a psychiatry note.
   * today an urgent-care doctor, without those records, is about to give sumatriptan
-    (a triptan) for a migraine — contraindicated with an MAOI (serotonin syndrome).
+    (a triptan) for a migraine, which is contraindicated with an MAOI because of the risk
+    of serotonin syndrome.
 """
 
 from __future__ import annotations
@@ -38,18 +39,18 @@ def records() -> list[ClinicalNode]:
                    dose="50mg daily", status=ClinicalStatus.ACTIVE, started="2023-04-11",
                    reason="hypertension", source=CARDIO),
 
-        # CONFLICT: the PCP list (older) still shows sertraline as an ACTIVE medication...
+        # Conflict: the older PCP list still shows sertraline as active.
         Medication(id="med-sertraline-pcp", name="sertraline", drug_class="SSRI",
                    dose="100mg daily", status=ClinicalStatus.ACTIVE, started="2021",
                    reason="depression", source=PCP_LIST),
 
-        # ...but psychiatry later DISCONTINUED it (the correct, more recent fact).
+        # The more recent psychiatry note discontinued it. This is the correct fact.
         Medication(id="med-sertraline-psych", name="sertraline", drug_class="SSRI",
                    dose="100mg daily", status=ClinicalStatus.DISCONTINUED, started="2021",
                    stopped="2024-01-08", reason="inadequate response; switched to MAOI",
                    source=PSYCH),
 
-        # THE BURIED DANGER: an active MAOI.
+        # The buried danger: an active MAOI.
         Medication(id="med-phenelzine", name="phenelzine", drug_class="MAOI",
                    dose="15mg three times daily", status=ClinicalStatus.ACTIVE,
                    started="2024-01-15", reason="treatment-resistant depression",
@@ -59,7 +60,7 @@ def records() -> list[ClinicalNode]:
         Allergy(id="allergy-penicillin", substance="penicillin", reaction="hives",
                 severity=Severity.MODERATE, source=PCP_LIST),
 
-        # --- Today's encounter (the proposed, dangerous prescription lives here) ---
+        # --- Today's encounter, where the proposed prescription is recorded ---
         Encounter(id="enc-urgent-2026", date="2026-07-02", provider="Dr. J. Whitfield",
                   specialty="Urgent Care",
                   summary="Acute migraine. Considering sumatriptan 50mg (safety check pending).",
@@ -67,5 +68,5 @@ def records() -> list[ClinicalNode]:
     ]
 
 
-# The drug the urgent-care doctor is about to prescribe (used by the Phase 4 safety net).
+# The drug the urgent-care doctor is about to prescribe, used by the safety check.
 PROPOSED_DRUG = {"name": "sumatriptan", "drug_class": "triptan"}

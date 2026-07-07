@@ -59,7 +59,7 @@ export function Handoff({ data }: { data: HandoffData }) {
         />
       </Reveal>
 
-      {/* Critical flags — the first thing an emergency clinician should see */}
+      {/* Critical flags: the first thing an emergency clinician should see */}
       <Reveal>
         <div
           className={`rounded-2xl border p-6 ${
@@ -69,7 +69,7 @@ export function Handoff({ data }: { data: HandoffData }) {
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className={`h-5 w-5 ${hasFlags ? "text-danger" : "text-rose"}`} />
             <span className={`text-sm font-semibold ${hasFlags ? "text-danger" : "text-rose"}`}>
-              {hasFlags ? "Critical flags — read first" : "No critical flags on record"}
+              {hasFlags ? "Critical flags: read first" : "No critical flags on record"}
             </span>
           </div>
           {hasFlags ? (
@@ -213,7 +213,7 @@ export function Handoff({ data }: { data: HandoffData }) {
       </Reveal>
 
       <p className="pb-8 text-center text-xs text-muted">
-        Prepared from your reconciled records. Decision-support only — not a substitute for
+        Prepared from your reconciled records. Decision support only, not a substitute for
         professional medical judgement.
       </p>
     </section>

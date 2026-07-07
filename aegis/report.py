@@ -1,8 +1,8 @@
-"""The 'new doctor' handoff view.
+"""The new-provider handoff view.
 
-When a patient walks into a provider who has never seen them, Aegis produces an accurate,
-current summary — built from the reconciled facts, so it excludes stale entries but still
-flags recently discontinued drugs that matter (e.g. an MAOI washout window).
+When a patient sees a provider who has never treated them, Aegis produces an accurate,
+current summary. It is built from the reconciled facts, so it excludes stale entries but
+still flags recently discontinued drugs that matter, such as an MAOI washout window.
 """
 
 from __future__ import annotations
@@ -32,6 +32,6 @@ def handoff_summary(nodes: list[ClinicalNode]) -> str:
 
     if stopped_meds:
         lines.append("\nRecently discontinued (still relevant for interactions/washout):")
-        lines += [f"  - {m.name} — stopped {m.stopped or 'date unknown'}" for m in stopped_meds]
+        lines += [f"  - {m.name}, stopped {m.stopped or 'date unknown'}" for m in stopped_meds]
 
     return "\n".join(lines)

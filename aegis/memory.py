@@ -1,23 +1,22 @@
-"""AegisMemory — the four memory verbs over the patient's clinical graph.
+"""AegisMemory: the memory operations over a patient's clinical graph.
 
-`MockMemory` is an in-memory version so tests/demos run with no keys.
-`CogneeMemory` is the real backend, validated end-to-end against cognee 1.2.2.
+MockMemory is an in-memory backend so tests and demos run without API keys.
+CogneeMemory is the real backend, validated against cognee 1.2.2.
 
-Single-tenant by design: one shared dataset holds the record this instance manages. This
-isn't a shortcut — `cognee.prune.prune_data()`/`prune_system()` (what real erasure needs,
-since single-item forget() doesn't purge the graph in this version — see `forget()` below)
-are global operations with no dataset or user scope in this Cognee version, so a single
-process genuinely cannot host multiple independent tenants safely. Aegis is built to be
-self-hosted per person anyway — you run your own instance for your own record, the same
-way you'd run your own password manager — so single-tenant is the right model, not a
-limitation.
+Aegis is single-tenant by design. One shared dataset holds the record a given instance
+manages. Reliable erasure depends on cognee.prune.prune_data() and prune_system(), which
+are global in this version of Cognee and have no per-dataset or per-user scope (single-item
+forget() does not purge the graph here; see forget() below). As a result one process cannot
+safely host several independent tenants. Aegis is meant to be self-hosted per person: you
+run your own instance for your own record, much like you would run your own password
+manager.
 """
 
 from __future__ import annotations
 
 import os
 import re
-from typing import Iterable, Protocol
+from typing import Protocol
 
 from .schema import ClinicalNode, ClinicalStatus, Medication, Condition, Allergy
 
@@ -25,14 +24,12 @@ from .schema import ClinicalNode, ClinicalStatus, Medication, Condition, Allergy
 class AegisMemory(Protocol):
     def remember(self, node: ClinicalNode) -> None: ...
     def recall(self, query: str): ...
-    def improve(self, node_id: str) -> None: ...
+    def improve(self) -> None: ...
     def forget(self, node_id: str) -> list[str]: ...
-    def all_nodes(self) -> list[ClinicalNode]: ...
-    def active(self) -> list[ClinicalNode]: ...
 
 
 def describe(node: ClinicalNode) -> str:
-    """Render a clinical fact as a sentence so Cognee can extract entities + relations."""
+    """Render a clinical fact as a sentence so Cognee can extract entities and relations."""
     src = f" (source: {node.source})"
     if isinstance(node, Medication):
         s = f"Medication {node.name}"
@@ -62,7 +59,7 @@ def describe(node: ClinicalNode) -> str:
     kind = type(node).__name__
     fields = node.model_dump(exclude={"id", "source"})
     body = ", ".join(f"{k}: {v}" for k, v in fields.items() if v is not None)
-    return f"{kind} — {body}.{src}"
+    return f"{kind}: {body}.{src}"
 
 
 class MockMemory:
@@ -74,30 +71,20 @@ class MockMemory:
     def remember(self, node: ClinicalNode) -> None:
         self._nodes[node.id] = node
 
-    def remember_all(self, nodes: Iterable[ClinicalNode]) -> None:
-        for n in nodes:
-            self.remember(n)
-
-    def remember_text(self, text: str, source: str) -> None:
-        # mock backend keeps only structured facts; raw text is a no-op here
-        pass
-
     def recall(self, query: str) -> list[ClinicalNode]:
-        # naive keyword recall over ACTIVE facts (real reasoning lives in CogneeMemory)
+        # Keyword match over active facts. Graph reasoning lives in CogneeMemory.
         q = query.lower()
-        return [n for n in self.active()
+        return [n for n in self._active()
                 if any(q in str(v).lower() for v in n.model_dump().values())]
 
-    def improve(self, node_id: str) -> None:  # mock: no-op enrichment hook
+    def improve(self) -> None:
+        # No enrichment step for the in-memory backend.
         pass
 
     def forget(self, node_id: str) -> list[str]:
         return [node_id] if self._nodes.pop(node_id, None) else []
 
-    def all_nodes(self) -> list[ClinicalNode]:
-        return list(self._nodes.values())
-
-    def active(self) -> list[ClinicalNode]:
+    def _active(self) -> list[ClinicalNode]:
         return [n for n in self._nodes.values()
                 if getattr(n, "status", ClinicalStatus.ACTIVE) == ClinicalStatus.ACTIVE]
 
@@ -105,8 +92,8 @@ class MockMemory:
 class CogneeMemory:
     """Real backend, wired against the cognee 1.2 async API.
 
-    One fixed, shared dataset (``aegis_patient``) — see the module docstring for why this
-    is single-tenant by design, not a shortcut.
+    Uses one fixed, shared dataset (``aegis_patient``). See the module docstring for why
+    this is single-tenant by design.
     """
 
     DATASET = "aegis_patient"
@@ -129,14 +116,10 @@ class CogneeMemory:
         if items and items[0].get("id"):
             self._data_ids[node.id] = str(items[0]["id"])
 
-    def remember_text(self, text: str, source: str) -> None:
-        self._run(self._cognee.remember(
-            text, dataset_name=self.DATASET, self_improvement=False))
-
     def recall(self, query: str, *, system_prompt: str | None = None):
-        """Graph-grounded, cited answer. ``system_prompt`` overrides the default answer
-        style — used by the safety check to ask for a structured JSON assessment instead
-        of a prose answer, while still reasoning over the same live graph."""
+        """Return a graph-grounded, cited answer. ``system_prompt`` overrides the default
+        answer style. The safety check uses it to request a structured JSON assessment
+        instead of prose, while still reasoning over the same live graph."""
         try:
             return self._run(
                 self._cognee.recall(
@@ -148,19 +131,20 @@ class CogneeMemory:
                 )
             )
         except Exception as e:
-            # No data yet, or dataset erased → recall 404s. Treat as "nothing to recall".
+            # No data yet, or the dataset was erased, so recall returns a 404. Treat that
+            # as nothing to recall.
             if "DatasetNotFound" in type(e).__name__ or "No datasets" in str(e):
                 return []
             raise
 
-    def improve(self, node_id: str | None = None) -> None:
+    def improve(self) -> None:
         self._run(self._cognee.improve(dataset=self.DATASET))
 
     def forget(self, node_id: str) -> list[str]:
-        # Removes the data record for one fact. NOTE: in this cognee version, single-item
-        # deletion does not purge graph/vector, so it does not change recall. The
-        # authoritative "current picture" is guaranteed by the reconciliation engine, not
-        # by this call. For true erasure that purges the store, use erase().
+        # Removes the data record for one fact. In this version of Cognee, single-item
+        # deletion does not purge the graph or vector store, so it does not change recall.
+        # The authoritative current picture is guaranteed by the reconciliation engine, not
+        # by this call. For erasure that purges the store, use erase().
         from uuid import UUID
         data_id = self._data_ids.pop(node_id, None)
         if data_id:
@@ -171,23 +155,17 @@ class CogneeMemory:
     def erase(self) -> None:
         """Purge memory so nothing can resurface in a later answer.
 
-        In this Cognee version the knowledge graph is a single shared store and recall's
-        graph-completion ignores the ``datasets`` filter, so ``forget(dataset=)`` is not
-        enough: it drops the dataset's documents but leaves orphaned graph nodes that still
-        leak into answers (proven: a fresh dataset with one fact still recalled facts from
-        old data). Pruning the whole system is the only reliable erasure here. This makes the
-        store single-tenant — it holds one patient's current record at a time, which is the
-        right model for the demo.
+        In this version of Cognee the knowledge graph is a single shared store, and
+        recall's graph completion ignores the ``datasets`` filter. So ``forget(dataset=)``
+        is not enough: it drops the dataset's documents but leaves orphaned graph nodes that
+        still leak into answers. Testing confirmed that a fresh dataset holding one fact
+        still recalled facts from old data. Pruning the whole system is the only reliable
+        way to erase here, which is why the store holds one patient's current record at a
+        time.
         """
         self._run(self._cognee.prune.prune_data())
         self._run(self._cognee.prune.prune_system(graph=True, vector=True, metadata=True))
         self._data_ids.clear()
-
-    def all_nodes(self):  # graph dump — wired in a later phase for the visualizer
-        raise NotImplementedError
-
-    def active(self):
-        raise NotImplementedError
 
 
 def parse_recall_answer(raw: str) -> tuple[str, list[dict]]:

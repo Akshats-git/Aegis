@@ -15,7 +15,6 @@ export type Med = {
 };
 
 export type SourceDoc = { name: string; text: string };
-export type Patient = { name: string; age: number; sex: string; mrn: string; note: string };
 
 export type ReconcileAction = {
   entity: string;
@@ -94,7 +93,7 @@ function headers(json = false): Record<string, string> {
 
 async function get<T>(path: string): Promise<T> {
   const r = await fetch(BASE + path, { cache: "no-store", headers: headers() });
-  if (!r.ok) throw new Error(`${path} → ${r.status}`);
+  if (!r.ok) throw new Error(`${path} failed with status ${r.status}`);
   return r.json();
 }
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -104,7 +103,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
     cache: "no-store",
   });
-  if (!r.ok) throw new Error(`${path} → ${r.status}`);
+  if (!r.ok) throw new Error(`${path} failed with status ${r.status}`);
   return r.json();
 }
 

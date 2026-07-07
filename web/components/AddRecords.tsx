@@ -26,7 +26,7 @@ export function AddRecords({ onChange }: { onChange: () => void }) {
   const [text, setText] = useState("");
   const [source, setSource] = useState("");
 
-  // manual — fill medications, conditions and allergies together, like a real report
+  // manual: fill medications, conditions and allergies together, like a real report
   const [meds, setMeds] = useState<MedRow[]>([emptyMed()]);
   const [conds, setConds] = useState<CondRow[]>([emptyCond()]);
   const [allergies, setAllergies] = useState<AllergyRow[]>([emptyAllergy()]);

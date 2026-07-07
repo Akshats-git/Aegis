@@ -1,27 +1,26 @@
-"""LIVE end-to-end demo against the real Cognee engine (the one you show judges).
+"""End-to-end demo against the real Cognee engine.
 
     python demo_live.py
 
-Calls the exact same functions the web app calls (server/cognee_bridge.py) — this isn't a
-separate script pretending to be the product, it IS the product's memory pipeline, run
-against the synthetic patient. Exercises all four Cognee verbs genuinely:
+Calls the same functions the web app calls (server/cognee_bridge.py), so it runs the
+product's actual memory pipeline against the synthetic patient. It exercises all four
+Cognee operations:
 
-  remember()  ingest the patient's fragmented, conflicting records into one graph
-  forget()    reconciliation drops the stale, superseded fact — a REAL forget() call per
-              stale fact (see cognee_bridge.resync); the graph is then rebuilt from just the
-              clean picture, since single-item forget() doesn't purge graph/vector in this
-              Cognee version and a safety product cannot rely on a call that might not stick
-  recall()    "what should a new provider know?" — cited, graph-grounded, and provably
-              clean of the fact that was just forgotten
-  improve()   enrich the memory graph after each sync
-  forget()    (dataset-level, via erase()) right-to-be-forgotten — provably purges: recall
-              afterwards finds nothing
+  remember()  ingest the patient's fragmented, conflicting records into one graph.
+  forget()    reconciliation drops the stale, superseded fact with a real forget() call per
+              stale fact (see cognee_bridge.resync). The graph is then rebuilt from just the
+              clean picture, because single-item forget() does not purge the graph or vector
+              store in this version of Cognee.
+  recall()    answer "what should a new provider know?" with a cited, graph-grounded reply
+              that no longer contains the fact that was just forgotten.
+  improve()   enrich the memory graph after each sync.
+  forget()    at the dataset level via erase(), for the right to be forgotten. Recall
+              afterwards finds nothing.
 
-The interaction safety check layers a deterministic, guaranteed rule engine (never left to
-an LLM for the life-threatening cases) with a broad, graph-grounded assessment answered by
-Cognee's own recall() over the SAME memory — so the flagship safety check is genuinely
-powered by Cognee, not a side script. Requires a working LLM key in .env.
-Offline, no-keys version: demo.py.
+The safety check combines a deterministic rule engine, which handles the life-threatening
+cases and is never left to an LLM, with a broad, graph-grounded assessment answered by
+Cognee's own recall() over the same memory. It requires a working LLM key in .env. For the
+offline version that needs no keys, see demo.py.
 """
 
 from __future__ import annotations
@@ -57,7 +56,7 @@ def main() -> None:
     nodes = records()
 
     line(); print("remember() + forget(): syncing the patient's fragmented records"); line()
-    # The action log is a fast local computation for display; the REAL forgetting happens
+    # The action log is a fast local computation for display. The actual forgetting happens
     # inside cognee_bridge.resync() below, against the live graph.
     actions, _ = reconcile(nodes, MockMemory())
     for a in actions:
@@ -67,7 +66,7 @@ def main() -> None:
     cognee_bridge.resync(nodes)
     while cognee_bridge.is_building():
         time.sleep(1)
-    print("  done — the graph now holds only the reconciled, current picture")
+    print("  done. the graph now holds only the reconciled, current picture")
 
     line(); print("recall(): what should a new provider know? (cited, from the live graph)"); line()
     got = cognee_bridge.recall(
@@ -79,7 +78,7 @@ def main() -> None:
         for e in got["evidence"]:
             print(f"    · {e['text']}  (from: {e['source']})")
     else:
-        print("  (no answer — Cognee unavailable)")
+        print("  (no answer, Cognee unavailable)")
 
     line(); print(f"Safety check: proposed {PROPOSED_DRUG['name']} ({PROPOSED_DRUG['drug_class']})"); line()
     from aegis.reconcile import current_medications
@@ -102,13 +101,13 @@ def main() -> None:
             print(f"    {c.get('severity', '?').upper()}: {c.get('concern')} "
                   f"(related to {c.get('related_to')})")
     else:
-        print("    (no answer — Cognee unavailable)")
+        print("    (no answer, Cognee unavailable)")
 
-    line(); print("forget(): right to be forgotten — erase the record, then re-query"); line()
+    line(); print("forget(): right to be forgotten. erase the record, then re-query"); line()
     cognee_bridge.erase()
     after = cognee_bridge.recall("List this patient's current medications.")
     if not after:
-        print("  record fully erased — Cognee has no memory of this patient (recall finds nothing).")
+        print("  record fully erased. Cognee has no memory of this patient (recall finds nothing).")
     else:
         print("  " + after["answer"].replace("\n", "\n  ")[:300])
 

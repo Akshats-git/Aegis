@@ -1,12 +1,11 @@
-"""Reconciliation & forget engine.
+"""Reconciliation and forget engine.
 
-Fragmented records disagree: the same drug shows up as 'active' in an old list and
-'discontinued' in a newer note. A filing cabinet keeps both and lets a human guess. Aegis
-decides which fact is authoritative (the most recent record wins) and **forgets the stale
-one**, so the current picture a doctor sees is clean and correct.
+Fragmented records disagree. The same drug can appear as 'active' in an old list and
+'discontinued' in a newer note. Aegis decides which fact is authoritative, taking the most
+recent record, and forgets the stale one so the current picture is clean and correct.
 
-This is the safety-critical use of forget(): a stale 'active' medication that lingers is
-exactly what leads to a wrong, dangerous decision downstream.
+This is the safety-critical use of forget(). A stale 'active' medication that lingers is a
+common cause of a wrong decision downstream.
 """
 
 from __future__ import annotations
@@ -64,7 +63,7 @@ def reconcile(nodes: list[ClinicalNode], mem: AegisMemory) -> tuple[list[Reconci
             continue
         statuses = {getattr(m, "status", ClinicalStatus.ACTIVE) for m in members}
         if len(statuses) < 2:
-            continue  # no conflict — same status everywhere
+            continue  # no conflict, same status everywhere
 
         # Most recent record is authoritative.
         authoritative = max(members, key=lambda m: _source_date(m.source))
@@ -89,6 +88,6 @@ def reconcile(nodes: list[ClinicalNode], mem: AegisMemory) -> tuple[list[Reconci
 
 
 def current_medications(nodes: list[ClinicalNode]) -> list[Medication]:
-    """The active-medication list after reconciliation — what a safety check must run on."""
+    """The active medication list after reconciliation, which a safety check runs on."""
     return [n for n in nodes
             if isinstance(n, Medication) and n.status == ClinicalStatus.ACTIVE]

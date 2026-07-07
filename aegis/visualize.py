@@ -1,9 +1,9 @@
-"""Terminal visualization for the demo/video — a medication timeline and a safety card.
+"""Terminal visualization: a medication timeline and a safety card.
 
     python -m aegis.visualize
 
-Pure stdlib (ANSI colors), no dependencies, so it renders reliably on stage. Runs the
-offline pipeline so it needs no keys.
+Uses only the standard library (ANSI colors) so it renders anywhere. Runs the offline
+pipeline, so it needs no API keys.
 """
 
 from __future__ import annotations

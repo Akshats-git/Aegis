@@ -1,8 +1,8 @@
-"""Aegis — the memory that keeps your health record honest.
+"""Aegis: a self-correcting clinical memory for patient records.
 
-A living, self-correcting clinical knowledge graph that remembers a patient's full history
-across every provider, retires stale/dangerous facts (forget), and acts as a safety net
-against dangerous drug interactions. Built on open-source Cognee.
+Aegis maintains a knowledge graph of a patient's history across providers. It retires
+stale or superseded facts and checks proposed medications against the current record for
+dangerous interactions. It is built on the open-source Cognee library.
 """
 
 from .schema import (

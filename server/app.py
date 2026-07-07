@@ -2,10 +2,10 @@
 
     uvicorn server.app:app --reload --port 8000
 
-Each request carries an X-User-Id header (the signed-in user's id, injected by the web app);
-the deterministic JSON record (documents/facts) is isolated per user. The Cognee-backed
-memory graph (recall, the safety check's AI layer, erase) is single-tenant — one shared
-graph for the record currently being managed — by design; see aegis/memory.py.
+Each request carries an X-User-Id header, the signed-in user's id injected by the web app.
+The JSON record (documents and facts) is isolated per user. The Cognee-backed memory graph
+that powers recall, the safety check's AI layer, and erase is single-tenant by design: one
+shared graph for the record currently being managed. See aegis/memory.py.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()  # make LLM_API_KEY etc. available for text extraction and Cognee
+load_dotenv()  # make LLM_API_KEY and related settings available to extraction and Cognee
 
 from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -187,8 +187,8 @@ def _cited_from_records(store: PatientStore) -> dict:
     if maoi:
         lines.append(f"Important: because you take {maoi[0].name}, some medicines "
                      "(certain migraine, cough and cold, and antidepressant medicines) can be "
-                     "dangerous — always check first.")
-    evidence = [{"text": f"{m.name} — {m.status.value}", "source": m.source} for m in meds]
+                     "dangerous, so always check first.")
+    evidence = [{"text": f"{m.name}: {m.status.value}", "source": m.source} for m in meds]
     return {"answer": " ".join(lines), "evidence": evidence, "engine": "records"}
 
 

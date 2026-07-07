@@ -1,15 +1,16 @@
 """The clinical data model for Aegis.
 
-Every clinical fact carries two things that make Aegis a *safety* tool rather than a
+Every clinical fact carries two fields that let Aegis act as a safety tool rather than a
 filing cabinet:
 
-  status  — is this true RIGHT NOW? (active) or is it stale? (discontinued/resolved/
-            corrected). Stale facts are what get patients hurt, so we track it explicitly.
-  source  — which document did this come from? Every fact is traceable, so a new doctor
-            can trust the summary. (Surfaced via Cognee's evidence references.)
+  status  Whether the fact is currently true (active) or stale (discontinued, resolved,
+          or corrected). Stale facts that linger are a common cause of harm, so the status
+          is tracked explicitly.
+  source  Which document the fact came from. Every fact is traceable, so a new provider
+          can trust the summary. Cognee surfaces this through its evidence references.
 
-These map onto nodes in the Cognee knowledge graph; the temporal fields (started/stopped,
-onset/resolved) let Cognee reason over *when* things were true.
+These map onto nodes in the Cognee knowledge graph. The temporal fields (started, stopped,
+onset, resolved) let Cognee reason about when each fact was true.
 """
 
 from __future__ import annotations
@@ -19,10 +20,10 @@ from pydantic import BaseModel, Field
 
 
 class ClinicalStatus(str, Enum):
-    ACTIVE = "active"              # currently true — safe to act on
-    DISCONTINUED = "discontinued"  # medication was stopped — MUST NOT be treated as current
-    RESOLVED = "resolved"          # condition is in the past / cured
-    CORRECTED = "corrected"        # was recorded in error, later fixed
+    ACTIVE = "active"              # currently true, safe to act on
+    DISCONTINUED = "discontinued"  # medication was stopped, do not treat as current
+    RESOLVED = "resolved"          # condition is in the past or cured
+    CORRECTED = "corrected"        # recorded in error, later fixed
 
     @property
     def is_stale(self) -> bool:
@@ -39,7 +40,7 @@ class Severity(str, Enum):
 class Medication(BaseModel):
     id: str
     name: str                      # generic name, e.g. "phenelzine"
-    drug_class: str | None = None  # e.g. "MAOI" — used by the interaction checker
+    drug_class: str | None = None  # e.g. "MAOI", used by the interaction checker
     dose: str | None = None
     status: ClinicalStatus = ClinicalStatus.ACTIVE
     started: str | None = None     # ISO date
@@ -66,7 +67,7 @@ class Allergy(BaseModel):
 
 
 class AdverseReaction(BaseModel):
-    """A patient-reported bad reaction — learned over time via improve()."""
+    """A patient-reported adverse reaction, learned over time via improve()."""
     id: str
     drug: str
     reaction: str

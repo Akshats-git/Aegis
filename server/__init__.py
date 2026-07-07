@@ -1,1 +1,1 @@
-"""Aegis HTTP API (FastAPI) — wraps the clinical engine for the web frontend."""
+"""Aegis HTTP API (FastAPI) that wraps the clinical engine for the web frontend."""

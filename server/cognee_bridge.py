@@ -1,13 +1,13 @@
 """Bridge between the web app and the Cognee memory layer.
 
 Cognee is the app's persistent, self-correcting memory: one shared clinical graph for the
-record this instance manages (single-tenant — see aegis/memory.py for why). When records
-change we resync that graph in the background (Cognee's graph build is slow, so it must not
-block the request). Three product features read from it: "Ask Aegis" (recall), the safety
+record this instance manages. It is single-tenant; see aegis/memory.py for the reason. When
+records change the graph is resynced in the background, because the graph build is slow and
+must not block the request. Three features read from it: "Ask Aegis" (recall), the safety
 check's broad assessment (assess), and account erasure (erase).
 
-Everything here is best-effort: if Cognee or the LLM is unavailable, callers fall back to
-fast deterministic logic, so the app keeps working.
+Everything here is best-effort. If Cognee or the LLM is unavailable, callers fall back to
+fast deterministic logic and the app keeps working.
 """
 
 from __future__ import annotations
@@ -55,19 +55,19 @@ def _set_building(on: bool) -> None:
 def resync(nodes: list) -> None:
     """Rebuild the memory graph so it holds exactly the current, reconciled record.
 
-    Ingests every fact (so reconciliation's forget() calls below have a real data_id to
-    act on), then reconciles: stale facts get a genuine forget() call. Single-item forget()
-    doesn't purge graph/vector in this Cognee version, so when reconciliation actually
-    dropped anything, we also rebuild from just the clean list — belt and suspenders,
-    guaranteeing a forgotten fact can never resurface in a later answer, while still
-    exercising a real forget() call per stale fact for the record.
+    First ingest every fact, so the forget() calls during reconciliation have a real
+    data_id to act on. Then reconcile, which issues a forget() call for each stale fact.
+    Single-item forget() does not purge the graph or vector store in this version of Cognee,
+    so when reconciliation dropped anything, also rebuild from just the clean list. That
+    guarantees a forgotten fact cannot resurface in a later answer while still running a
+    real forget() call per stale fact.
     """
     if not enabled():
         return
     items = list(nodes)
-    # Set synchronously (not as the first line of the thread) so a recall()/is_building()
-    # call made right after resync() returns can never race ahead of the rebuild and see
-    # the graph mid-erase.
+    # Set this synchronously, not inside the thread, so a recall() or is_building() call
+    # made right after resync() returns cannot race ahead of the rebuild and observe the
+    # graph mid-erase.
     _set_building(True)
 
     def _run():
@@ -125,11 +125,11 @@ def recall(query: str) -> dict | None:
 def assess(name: str, indication: str | None = None) -> dict | None:
     """Graph-grounded broad safety assessment, cited from the record's own Cognee memory.
 
-    Reuses ``recall()``'s GRAPH_COMPLETION with a custom system prompt asking for a
-    structured verdict instead of prose, so the same cited, graph-reasoned pipeline that
-    powers "Ask Aegis" also powers the safety check's AI layer. Returns None (caller falls
-    back to a direct LLM call) if Cognee is unavailable or the answer isn't valid JSON —
-    the deterministic interaction rules remain the safety-critical authority either way.
+    Reuses recall()'s GRAPH_COMPLETION with a custom system prompt that asks for a
+    structured verdict instead of prose, so the same cited, graph-reasoned pipeline behind
+    "Ask Aegis" also powers the safety check's AI layer. Returns None (and the caller falls
+    back to a direct LLM call) if Cognee is unavailable or the answer is not valid JSON. The
+    deterministic interaction rules remain the safety-critical authority either way.
     """
     if not enabled():
         return None

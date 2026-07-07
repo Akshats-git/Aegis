@@ -1,11 +1,11 @@
 """Per-user patient state for the web app.
 
-Each signed-in user gets their own profile (an isolated set of clinical facts + source
-documents), persisted to disk so it survives restarts. New profiles start EMPTY — there is
-no preloaded demo patient.
+Each signed-in user gets their own profile: an isolated set of clinical facts and source
+documents, persisted to disk so it survives restarts. New profiles start empty, with no
+preloaded demo patient.
 
-  * add_from_text(): paste a clinical note -> an LLM extracts structured facts.
-  * add_manual():    add a single medication/condition/allergy via a form.
+  * add_from_text(): paste a clinical note and an LLM extracts structured facts.
+  * add_manual():    add a single medication, condition, or allergy via a form.
   * clear():         empty the profile.
 """
 
@@ -230,9 +230,9 @@ _SCHEMA_HINT = f"""Return ONLY JSON with this shape:
                     "severity": "mild"|"moderate"|"severe"|"life-threatening"}}]
 }}
 For drug_class, prefer one of: {", ".join(KNOWN_CLASSES)} (use the closest match).
-For "dose", capture the amount AND/OR how often it is taken exactly as written — e.g.
-"500mg twice daily", "2 times a day", "once at night". If only a frequency is given, use
-that as the dose.
+For "dose", capture the amount and/or how often it is taken exactly as written, for
+example "500mg twice daily", "2 times a day", "once at night". If only a frequency is
+given, use that as the dose.
 Use ISO dates (YYYY-MM-DD) when present. Omit fields you cannot find (use null)."""
 
 

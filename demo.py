@@ -1,10 +1,10 @@
-"""Phase 4 demo: the full safety story, offline (no keys).
+"""Offline safety demo, runs without any API keys.
 
     python demo.py
 
-Naive path: a doctor prescribes sumatriptan for a migraine → serotonin syndrome.
-Aegis path: reconcile → forget stale facts → check the clean picture → catch the fatal
-MAOI interaction, cite the source note, and suggest a safe alternative.
+Naive path: a doctor prescribes sumatriptan for a migraine, risking serotonin syndrome.
+Aegis path: reconcile the records, forget the stale facts, check the clean picture, catch
+the MAOI interaction, cite the source note, and suggest a safe alternative.
 """
 
 from __future__ import annotations
@@ -28,11 +28,11 @@ def main() -> None:
     proposed = PROPOSED_DRUG  # sumatriptan (triptan) for the migraine
 
     line()
-    print("NAIVE PATH — doctor without the full, current picture")
+    print("NAIVE PATH: doctor without the full, current picture")
     line()
     print(f"  Prescribes {proposed['name']} for acute migraine.")
-    print("  ☠️  Result: co-administered with the patient's active MAOI (phenelzine),")
-    print("      this can cause SEROTONIN SYNDROME — potentially fatal.")
+    print("  Result: co-administered with the patient's active MAOI (phenelzine),")
+    print("      this can cause serotonin syndrome, which is potentially fatal.")
 
     # Aegis path
     actions, clean = reconcile(nodes, mem)
@@ -42,7 +42,7 @@ def main() -> None:
 
     print()
     line()
-    print("AEGIS PATH — reconcile, forget, then safety-check the clean picture")
+    print("AEGIS PATH: reconcile, forget, then safety-check the clean picture")
     line()
     print("  Current medications (after forgetting stale facts):")
     for m in current:
@@ -68,8 +68,7 @@ def main() -> None:
 
     print()
     line()
-    print("Aegis caught what a fragmented record would have missed. That's the difference")
-    print("between a filing cabinet and a memory that keeps you safe.")
+    print("Aegis caught an interaction that a fragmented record would have missed.")
 
 
 if __name__ == "__main__":

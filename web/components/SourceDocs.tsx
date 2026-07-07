@@ -103,7 +103,7 @@ export function SourceDocs({ notes, onChange }: { notes: Note[]; onChange: () =>
                         </div>
                       )}
 
-                      {/* The note itself — editable */}
+                      {/* The note itself, editable */}
                       <div className="mt-4">
                         <div className="mb-1.5 flex items-center justify-between">
                           <span className="label">Note</span>
